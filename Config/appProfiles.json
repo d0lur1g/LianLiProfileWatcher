@@ -1,0 +1,26 @@
+{
+  "baseFolder": "E:\\Programmes\\Lian Li - L-Connect 3",
+  "destination": "C:\\Program Files\\Lian-Li\\L-Connect 3\\appdata",
+  "scriptPath": "E:\\Programmes\\Lian Li - L-Connect 3\\SERVICE\\lian_li_import.ps1",
+  "default": "profile-rainbow",
+  "profiles": {
+    "cyberpunk2077": "profile-cyberpunk",
+    "winword": "profile-cyberpunk",
+    "excel": "profile-jdownloader",
+    "notion": "profile-notion",
+    "code": "profile-lightroom",
+    "premierepro": "profile-photoshop",
+    "photoshop": "profile-photoshop",
+    "lightroom": "profile-lightroom",
+    "acrobat": "profile-red",
+    "cities": "profile-lightroom",
+    "deezer": "profile-deezer",
+    "chrome": "profile-chrome",
+    "explorer": "profile-cyberpunk",
+    "jdownloader2": "profile-jdownloader",
+    "screentool": "profile-red",
+    "arc": "profile-chrome",
+    "cs2": "profile-cs2",
+    "notepad": "profile-lightroom"
+  }
+}

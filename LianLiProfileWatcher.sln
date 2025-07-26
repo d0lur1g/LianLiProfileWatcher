@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LianLiProfileWatcher", "LianLiProfileWatcher.csproj", "{1B121427-0172-8814-0E8F-FB64956DB8B7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B121427-0172-8814-0E8F-FB64956DB8B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B121427-0172-8814-0E8F-FB64956DB8B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B121427-0172-8814-0E8F-FB64956DB8B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B121427-0172-8814-0E8F-FB64956DB8B7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {77EBE217-C7E6-49BB-8A10-FCE274D3C4B1}
+	EndGlobalSection
+EndGlobal
