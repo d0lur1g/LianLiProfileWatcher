@@ -13,6 +13,17 @@ dotnet publish .\LianLiProfileWatcher.csproj -c Release -r win-x64 --self-contai
 
 ## 3. Installation
 
+> ### Avant de démarrer
+>
+>1. Renommez `Config/appProfiles.example.json` en `Config/appProfiles.json`.
+>2. Adaptez les valeurs selon votre installation locale:
+>    - `baseFolder`
+>    - `destination`
+>    - `scriptPath`
+>    - `default`
+>    - `profiles\apps`
+>3. Ne commit jamais `Config/appProfiles.json` — il est ignoré par Git.
+
 ### 3.1 Copier les fichiers
 
 1. Ouvrez un Explorateur de fichiers et naviguez jusqu’à `publish/`.
