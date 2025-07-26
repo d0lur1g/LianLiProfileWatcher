@@ -18,7 +18,8 @@ bld/
 [Ll]ogs/
 [Pp]ublish/
 
-
+# Config json files
+Config/appProfiles.json
 
 # Tests build
 [Tt]ests/**/bin/

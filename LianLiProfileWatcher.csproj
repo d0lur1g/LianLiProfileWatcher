@@ -20,15 +20,16 @@
     <Compile Remove="tests\**\*.cs" />
 
     <!-- Template de config, toujours présent dans le repo -->
-    <None Include="Config\appProfiles.example.json">
+    <Content Include="Config\appProfiles.example.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
+    </Content >
 
     <!-- Fichier de config perso, optionnel : copié uniquement s’il existe -->
-    <None Include="Config\appProfiles.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Content Include="Config\appProfiles.json" Condition="Exists('Config\appProfiles.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
 
   </ItemGroup>
 
