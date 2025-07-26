@@ -1,0 +1,35 @@
+name: CI
+
+# Déclenchement sur push et PR vers main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      # 1. Récupérer le code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Installer .NET 9
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      # 3. Restore des dépendances
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # 4. Build en Release
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # 5. Exécuter les tests
+      - name: Run tests
+        run: dotnet test --no-restore --configuration Release --verbosity normal
