@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -7,6 +8,7 @@ using Serilog.Events;
 using LianLiProfileWatcher.Application.Interfaces;
 using LianLiProfileWatcher.Infrastructure.Appliers;
 using LianLiProfileWatcher.Services;
+using LianLiProfileWatcher.Models;
 
 namespace LianLiProfileWatcher
 {
@@ -54,28 +56,53 @@ namespace LianLiProfileWatcher
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host
                 .CreateDefaultBuilder(args)
-                .UseSerilog()                   // remplace le logging par Serilog
-                .UseConsoleLifetime()           // ne bloque pas le shutdown
+                .ConfigureAppConfiguration((ctx, builder) =>
+                {
+                    // 1) Support CLI --config
+                    var switchMappings = new Dictionary<string, string>
+                    {
+                        { "--config", "ConfigPath" }
+                    };
+                    builder.AddCommandLine(args, switchMappings);
+
+                    // 2) Si --config a été passé
+                    var cmdPath = ctx.Configuration["ConfigPath"];
+                    if (!string.IsNullOrEmpty(cmdPath))
+                    {
+                        builder.AddJsonFile(cmdPath!, optional: false, reloadOnChange: true);
+                    }
+
+                    // 3) Ou si variable d’env LIANLI_CONFIG_PATH
+                    var envPath = Environment.GetEnvironmentVariable("LIANLI_CONFIG_PATH");
+                    if (!string.IsNullOrEmpty(envPath))
+                    {
+                        builder.AddJsonFile(envPath!, optional: true, reloadOnChange: true);
+                    }
+
+                    // 4) Sinon on regarde dans LocalAppData
+                    var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)!;
+                    var userCfg = Path.Combine(localAppData,
+                                                    "LianLiProfileWatcher",
+                                                    "Config",
+                                                    "appProfiles.json");
+                    builder.AddJsonFile(userCfg, optional: true, reloadOnChange: true);
+
+                    // 5) Enfin, le template embarqué
+                    var exampleCfg = Path.Combine(AppContext.BaseDirectory,
+                                                 "Config",
+                                                 "appProfiles.example.json");
+                    builder.AddJsonFile(exampleCfg, optional: false, reloadOnChange: false);
+                })
+                .UseSerilog()
+                .UseConsoleLifetime()
                 .ConfigureServices((ctx, services) =>
                 {
-                    // 1. Chemins des deux fichiers de config
-                    var cfgDir = Path.Combine(AppContext.BaseDirectory, "Config");
-                    var userCfg = Path.Combine(cfgDir, "appProfiles.json");
-                    var exampleCfg = Path.Combine(cfgDir, "appProfiles.example.json");
-
-                    // 2. Choix : si le fichier perso existe, on l'utilise, sinon l'exemple
-                    var cfgPath = File.Exists(userCfg) ? userCfg : exampleCfg;
-
-                    Log.Information("Chargement de la config depuis : {Path}", cfgPath);
-
-                    // 3. Injection de la config via ton service existant
-                    services.AddSingleton<IConfigurationService>(_ =>
-                        new ConfigurationService(cfgPath));
-
-                    // Reste des services
+                    // Binding POCO + injection
+                    services.Configure<AppProfileConfig>(ctx.Configuration);
                     services.AddSingleton<IProfileApplier, ProfileApplier>();
                     services.AddSingleton<IForegroundProcessService, ForegroundProcessService>();
-                    services.AddHostedService<Worker>();  // votre hook WinEvent
+                    services.AddHostedService<Worker>();
                 });
+
     }
 }
