@@ -1,7 +1,9 @@
 # Lian Li Profile Watcher
 
 [![CI](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Coverage](https://img.shields.io/codecov/c/github/<TonCompte>/LianLiProfileWatcher.svg)](https://codecov.io/gh/d0lur1g/LianLiProfileWatcher)
+[![Release](https://img.shields.io/github/v/release/d0lur1g/LianLiProfileWatcher)](https://github.com/d0lur1g/LianLiProfileWatcher/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## 🧩 **Objectif général**
 
@@ -343,3 +345,11 @@ L’agent tournera en arrière-plan (pas de console à l’écran).
 - **Service Windows vs agent**
   - Les services Windows ne peuvent pas hooker des sessions utilisateurs.
   - Utilisez exclusivement l’agent en session utilisateur.
+
+Pour plus de détails, voir la documentation complète :
+
+- [CHANGELOG](CHANGELOG.md)  
+- [CONTRIBUTING](CONTRIBUTING.md)  
+- [CODE OF CONDUCT](CODE_OF_CONDUCT.md)  
+- [Guide de déploiement détaillé](docs/DEPLOYMENT.md)  
+- [Schéma d’architecture (PlantUML)](docs/architecture.puml)
