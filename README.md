@@ -147,33 +147,35 @@ Le dossier **`publish/`** contient l’exécutable, les **`DLLs`** et **`Config/
 
 ## 🔧 Configuration
 
+### 📢 Avant de démarrer
+
+1. Renommez `Config/appProfiles.example.json` en `Config/appProfiles.json`.
+2. Adaptez les valeurs selon votre installation locale:
+    - **`baseFolder`** : racine contenant les sous-dossiers de chaque profil.
+    - **`destination`** : dossier où copier les fichiers du profil actif.
+    - **`scriptPath`** : chemin vers un éventuel script PowerShell à exécuter après copie.
+    - **`default`** : profil à appliquer si aucun process n’est reconnu.
+    - **`profiles`** : map de processName → nomDuProfil.
+3. Ne commit jamais `Config/appProfiles.json` — il est ignoré par Git.
+
 Placez votre fichier **`Config/appProfiles.json`** à la racine du dossier **`publish/`**.
 
-Exemple :
+*Exemple* :
 
 ```json
 {
-  "baseFolder": "E:\\Programmes\\Lian Li - L-Connect 3\\Profiles",
-  "destination": "C:\\Users\\<User>\\AppData\\Local\\LianLiProfileWatcher\\ActiveProfile",
-  "scriptPath": "E:\\Scripts\\lian_li_import.ps1",
+  "baseFolder": "S:\\Software\\LianLi-L-Connect3\\Profiles",
+  "destination": "C:\\Users\\<YOUR_NAME>\\AppData\\Local\\LianLiProfileWatcher\\ActiveProfile",
+  "scriptPath": "S:\\Scripts\\lian_li_import.ps1",
   "default": "profile-default",
   "profiles": {
     "chrome": "profile-chrome",
-    "notepad": "profile-notion",
-    "code": "profile-vscode"
+    "notepad": "profile-notepad",
+    "code": "profile-vscode",
+    "explorer":"profile-explorer"
   }
 }
 ```
-
-- **`baseFolder`** : racine contenant les sous-dossiers de chaque profil.
-
-- **`destination`** : dossier où copier les fichiers du profil actif.
-
-- **`scriptPath`** : chemin vers un éventuel script PowerShell à exécuter après copie.
-
-- **`default`** : profil à appliquer si aucun process n’est reconnu.
-
-- **`profiles`** : map de processName → nomDuProfil.
 
 ## 🗺️ Fonctionnement
 
