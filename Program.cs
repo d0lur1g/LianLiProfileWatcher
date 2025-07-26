@@ -58,6 +58,8 @@ namespace LianLiProfileWatcher
                 .CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((ctx, builder) =>
                 {
+                    // On construit la liste des fichiers à charger, dans l’ordre :
+                    // CLI → path_config_perso → Variable d'ENV → LocalAppData → example (obligatoire)
                     // 1) Support CLI --config
                     var switchMappings = new Dictionary<string, string>
                     {
