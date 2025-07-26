@@ -1,27 +1,75 @@
-using LianLiProfileWatcher;
-using LianLiProfileWatcher.Services;
+using System;
+using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
 using LianLiProfileWatcher.Application.Interfaces;
 using LianLiProfileWatcher.Infrastructure.Appliers;
+using LianLiProfileWatcher.Services;
 
-var host = Host.CreateDefaultBuilder(args)
-    //.UseWindowsService()    // ou .UseConsoleLifetime() si tu veux debug en console
-    .ConfigureServices((context, services) =>
+namespace LianLiProfileWatcher
+{
+    public class Program
     {
-        // Chargement de la config JSON
-        var configPath = Path.Combine(AppContext.BaseDirectory, "Config", "appProfiles.json");
-        services.AddSingleton<IConfigurationService>(_ => new ConfigurationService(configPath));
+        public static int Main(string[] args)
+        {
+            // 1) Préparer le fichier de log dans %LOCALAPPDATA%
+            var logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "LianLiProfileWatcher",
+                "Logs");
+            Directory.CreateDirectory(logDir);
+            var logPath = Path.Combine(logDir, "agent.log");
 
-        // Injection du ProfileApplier
-        services.AddSingleton<IProfileApplier, ProfileApplier>();
+            // 2) Configurer Serilog
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File(
+                    logPath,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    shared: true,
+                    restrictedToMinimumLevel: LogEventLevel.Information)
+                .CreateLogger();
 
-        // Enregistrement du Worker hook Win32
-        services.AddHostedService<Worker>();
-    })
-    .ConfigureLogging(logging =>
-    {
-        logging.ClearProviders();
-        logging.AddConsole();
-    })
-    .Build();
+            try
+            {
+                Log.Information("Démarrage de l'agent LianLiProfileWatcher");
+                CreateHostBuilder(args).Build().Run();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Échec inattendu de l'agent");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
 
-await host.RunAsync();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host
+                .CreateDefaultBuilder(args)
+                .UseSerilog()                   // remplace le logging par Serilog
+                .UseConsoleLifetime()           // ne bloque pas le shutdown
+                .ConfigureServices((ctx, services) =>
+                {
+                    // JSON de config
+                    var configPath = Path.Combine(
+                        AppContext.BaseDirectory,
+                        "Config",
+                        "appProfiles.json");
+
+                    services.AddSingleton<IConfigurationService>(_ =>
+                        new ConfigurationService(configPath));
+
+                    services.AddSingleton<IProfileApplier, ProfileApplier>();
+                    services.AddSingleton<IForegroundProcessService, ForegroundProcessService>();
+                    services.AddHostedService<Worker>();  // votre hook WinEvent
+                });
+    }
+}

@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 using LianLiProfileWatcher.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace LianLiProfileWatcher.Infrastructure.Appliers
 {
