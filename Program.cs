@@ -58,15 +58,21 @@ namespace LianLiProfileWatcher
                 .UseConsoleLifetime()           // ne bloque pas le shutdown
                 .ConfigureServices((ctx, services) =>
                 {
-                    // JSON de config
-                    var configPath = Path.Combine(
-                        AppContext.BaseDirectory,
-                        "Config",
-                        "appProfiles.json");
+                    // 1. Chemins des deux fichiers de config
+                    var cfgDir = Path.Combine(AppContext.BaseDirectory, "Config");
+                    var userCfg = Path.Combine(cfgDir, "appProfiles.json");
+                    var exampleCfg = Path.Combine(cfgDir, "appProfiles.example.json");
 
+                    // 2. Choix : si le fichier perso existe, on l'utilise, sinon l'exemple
+                    var cfgPath = File.Exists(userCfg) ? userCfg : exampleCfg;
+
+                    Log.Information("Chargement de la config depuis : {Path}", cfgPath);
+
+                    // 3. Injection de la config via ton service existant
                     services.AddSingleton<IConfigurationService>(_ =>
-                        new ConfigurationService(configPath));
+                        new ConfigurationService(cfgPath));
 
+                    // Reste des services
                     services.AddSingleton<IProfileApplier, ProfileApplier>();
                     services.AddSingleton<IForegroundProcessService, ForegroundProcessService>();
                     services.AddHostedService<Worker>();  // votre hook WinEvent

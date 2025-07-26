@@ -1,0 +1,25 @@
+{
+  "baseFolder": "<ADD_YOUR_PATH_HERE>",
+  "destination": "C:\\<ADD_YOUR_PATH_HERE>\\appdata",
+  "scriptPath": "<ADD_YOUR_PATH_HERE>\\lian_li_import.ps1",
+  "default": "profile-default",
+  "profiles": {
+    "cyberpunk2077": "profile-cyberpunk",
+    "winword": "profile-winword",
+    "excel": "profile-excel",
+    "notion": "profile-notion",
+    "code": "profile-code",
+    "premierepro": "profile-adobe",
+    "photoshop": "profile-adobe",
+    "lightroom": "profile-adobe",
+    "acrobat": "profile-adobe",
+    "cities": "profile-cities",
+    "deezer": "profile-deezer",
+    "chrome": "profile-chrome",
+    "explorer": "profile-explorer",
+    "screentool": "profile-explorer",
+    "arc": "profile-browser",
+    "cs2": "profile-cs2",
+    "notepad": "profile-explorer"
+  }
+}
