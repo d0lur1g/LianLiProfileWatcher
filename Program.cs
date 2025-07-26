@@ -4,7 +4,7 @@ using LianLiProfileWatcher.Application.Interfaces;
 using LianLiProfileWatcher.Infrastructure.Appliers;
 
 var host = Host.CreateDefaultBuilder(args)
-    .UseWindowsService()    // ou .UseConsoleLifetime() si tu veux debug en console
+    //.UseWindowsService()    // ou .UseConsoleLifetime() si tu veux debug en console
     .ConfigureServices((context, services) =>
     {
         // Chargement de la config JSON
