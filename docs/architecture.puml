@@ -1,0 +1,24 @@
+@startuml a
+title LianLiProfileWatcher Architecture
+
+package "Agent Utilisateur" {
+  [Program.cs] --> [Worker.cs]
+  [Worker.cs] --> [WinEvent Hook]
+  [Worker.cs] --> [ConfigurationService]
+  [Worker.cs] --> [ProfileApplier]
+}
+
+package "Infrastructure" {
+  [ProfileApplier] --> [FileSystem: copy/delete]
+  [ProfileApplier] --> [Optional: sc.exe / PowerShell]
+}
+
+package "Configuration" {
+  [appProfiles.json] --> [ConfigurationService]
+  [AppProfileConfig model]
+}
+
+[Worker.cs] ..> [AppProfileConfig model]     : lit
+[Worker.cs] ..> [WinEvent Hook]              : installe
+[Worker.cs] --> [ProfileApplier]             : applique()
+@enduml
