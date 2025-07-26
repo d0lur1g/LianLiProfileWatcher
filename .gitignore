@@ -16,6 +16,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+[Pp]ublish/
 
 # Tests build
 [Tt]ests/**/bin/
@@ -104,5 +105,10 @@ appsettings*.json
 
 # Logs
 *.log
+
+###########################
+
+# GIT
+.git/
 
 ###########################
