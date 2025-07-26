@@ -51,13 +51,12 @@ Le service `LianLiProfileWatcher` s’adresse aux utilisateurs et possesseurs de
 
 | Dossier / Composant                                  | Rôle                                                                                                              |
 | -----------------------------------------------------| ----------------------------------------------------------------------------------------------------------------- |
-| `Program.cs`                                         | Configure le Generic Host (.NET), Serilog, la DI et enregistre le `Worker`                                        |
+| `Program.cs`                                         | Configure le Generic Host (.NET), Serilog, les services DI, les sources de config et enregistre le `Worker`                                        |
 | `Worker.cs`                                          | HostedService principal : installe le hook WinEvent, détecte le changement de fenêtre active et appelle `ProfileApplier` |
-| `Services/ConfigurationService.cs`                   | Lit et parse `Config/appProfiles.json` (désérialisation case-insensitive) et expose le POCO `AppProfileConfig`    |
+| `ConfigurationService / IOptionsMonitor`             | Charge et surveille le JSON de config (CLI, env var, LocalAppData, template) et expose le POCO `AppProfileConfig`    |
 | `Models/AppProfileConfig.cs`                         | Déclare la classe C# correspondant à la structure JSON de configuration                                          |
 | `Infrastructure/Appliers/ProfileApplier.cs`          | Logique d’application d’un profil : nettoyage des anciens dossiers, copie des nouveaux, et redémarrage du service  |
-
----
+| `ForegroundProcessService.cs`                        | Extrait le nom du processus au premier plan |
 
 ## 📦 Structure du projet
 
@@ -67,6 +66,8 @@ LianLiProfileWatcher/
 ├─ .github/
 │  └─ workflows/
 │     └─ ci.yml
+├─ .vscode/
+│  └─ extensions.json
 ├─ Application/
 │  └─ Interfaces/
 │     ├─ IConfigurationService.cs
@@ -74,7 +75,9 @@ LianLiProfileWatcher/
 │     └─ IProfileApplier.cs
 ├─ bin/
 ├─ Config/
-│  └─ appProfiles.json
+│  └─ appProfiles.example.json
+├─ docs/
+│  └─ architecture.puml
 ├─ Infrastructure/
 │  └─ Appliers/
 │     └─ ProfileApplier.cs
@@ -83,7 +86,6 @@ LianLiProfileWatcher/
 ├─ obj/
 ├─ Properties/
 │  └─ launchSettings.json
-├─ publish/
 ├─ Scripts/
 │  ├─ install-service.ps1
 │  └─ uninstall-service.ps1
@@ -99,11 +101,17 @@ LianLiProfileWatcher/
 │     ├─ LianLiProfileWatcher.Tests.csproj
 │     └─ ProfileApplierTests.cs
 ├─ .gitignore
+├─ CHANGELOG.md
+├─ CODE_OF_CONDUCT.md
+├─ CONTRIBUTING.md
+├─ DEPLOYMENT.md
 ├─ LianLiProfileWatcher.csproj
 ├─ LianLiProfileWatcher.sln
+├─ LICENSE
 ├─ Program.cs
 ├─ README.md
 └─ Worker.cs
+
 ```
 
 ## ⚙️ Prérequis
@@ -111,9 +119,9 @@ LianLiProfileWatcher/
 - **Windows 10/11 x64**  
 - **.NET 9.0 SDK** installé ([télécharger](https://dotnet.microsoft.com/download))  
 - **PowerShell 5+** (intégré)  
-- **Accès en écriture** sur `%LOCALAPPDATA%` pour les logs et sur le dossier d’installation (ex. `C:\Program Files\…`)  
-
----
+- **Accès en écriture** sur :
+  - `%LOCALAPPDATA%` pour les logs et sur le dossier d’installation (ex. `C:\Program Files\…`)  
+  - le dossier d’installation et/ou l’emplacement de votre configuration personnelle
 
 ## 🛠️ Installation et build
 
@@ -147,20 +155,24 @@ Le dossier **`publish/`** contient l’exécutable, les **`DLLs`** et **`Config/
 
 ## 🔧 Configuration
 
-### 📢 Avant de démarrer
+> ### 📢 Avant de démarrer
+>
+>1. Choisissez la manière de définir votre fichier de config sans **JAMAIS** toucher au fichier  `Config/appProfiles.example.json`.  
+> Voir fichier [DEPLOYMENT.md > Créer ou pointer votre fichier de config](DEPLOYMENT.md)
+>2. Adaptez les valeurs selon votre installation locale:
+>    - ***`_COMMENT` → A SUPPRIMER DANS VOTRE FICHIER DE CONFIGURATION PERSONNEL***
+>    - `baseFolder`
+>    - `destination`
+>    - `scriptPath`
+>    - `default`
+>    - `profiles\apps`
+>3. Ne commit jamais `Config/appProfiles.json` — il est ignoré par Git.
 
-1. Renommez `Config/appProfiles.example.json` en `Config/appProfiles.json`.
-2. Adaptez les valeurs selon votre installation locale:
-    - **`baseFolder`** : racine contenant les sous-dossiers de chaque profil.
-    - **`destination`** : dossier où copier les fichiers du profil actif.
-    - **`scriptPath`** : chemin vers un éventuel script PowerShell à exécuter après copie.
-    - **`default`** : profil à appliquer si aucun process n’est reconnu.
-    - **`profiles`** : map de processName → nomDuProfil.
-3. Ne commit jamais `Config/appProfiles.json` — il est ignoré par Git.
+*Exemple de fichier de configuration* :
 
-Placez votre fichier **`Config/appProfiles.json`** à la racine du dossier **`publish/`**.
-
-*Exemple* :
+```makefile
+D:\Configs\appProfiles.json
+```
 
 ```json
 {
@@ -268,12 +280,14 @@ Un workflow GitHub Actions **`(.github/workflows/ci.yml)`** déclenche sur push/
 Ajoutez dans README.md :
 
 ```markdown
-[![CI](https://github.com/<votre-compte>/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/<VOTRE-COMPTE>/LianLiProfileWatcher/actions/workflows/ci.yml)
+[![CI](https://github.com/<VOTRE-COMPTE>/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/<VOTRE-COMPTE>/LianLiProfileWatcher/actions/workflows/ci.yml)
 ```
 
 ## 📦 Packaging & déploiement
 
 ### Script PowerShell d’installation
+
+\+ de détails dans le fichier [DEPLOYMENT.md](DEPLOYMENT.md)
 
 Le script **`Scripts/install-service.ps1`** :
 
