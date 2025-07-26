@@ -2,7 +2,7 @@
 
 # Lian Li Profile Watcher
 
-[![CI](https://github.com/<TON-UTILISATEUR>/<TON-REPO>/actions/workflows/ci.yml/badge.svg)](https://github.com/<TON-UTILISATEUR>/<TON-REPO>/actions/workflows/ci.yml)
+[![CI](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml)
 
 ## 🧩 **Objectif général**
 
