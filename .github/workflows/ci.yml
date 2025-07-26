@@ -32,4 +32,15 @@ jobs:
 
       # 5. Exécuter les tests
       - name: Run tests
-        run: dotnet test --no-restore --configuration Release --verbosity normal
+        run: dotnet test --no-restore --configuration Release `
+             /p:CollectCoverage=true `
+             /p:CoverletOutputFormat=lcov `
+             /p:CoverletOutput=TestResults/ `
+             --verbosity normal
+
+      # 6. Publier les résultats de couverture
+      - name: Publish coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage
+          path: TestResults/coverage.info
