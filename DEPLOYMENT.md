@@ -35,7 +35,7 @@ Le dossier `publish/` contient désormais :
 
 ## 3. Packaging
 
-Pour générer l’archive ZIP de la version v<major>.<minor>.<patch> :
+Pour générer l’archive ZIP de la version v\<major>.\<minor>.\<patch> :
 
 ```powershell
 # Supprimer un ancien zip
@@ -78,14 +78,15 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement d�
 
 4. **Template intégré (fallback)**
 
-    > ⚠️ **REMARQUE** :  
-    > 📢 Ne pas modifier ``appProfiles.example.json`` dans le dossier ``publish/`` → C’est un template versionné.  
-    > 1. Créez un nouveau fichier basé sur le fichier exemple de configuration publish\Config\appProfiles.example.json  
-    > 2. Editez uniquement votre propre ``appProfiles.json`` selon l’une des méthodes cités ci-dessus.
+    > [!CAUTION]
+    > 📢 Ne pas modifier ``appProfiles.example.json`` dans le dossier ``publish/`` → C’est un template versionné.
 
-    ```bash
-    Config/appProfiles.example.json
-    ```
+    1. Créez un nouveau fichier basé sur le fichier exemple de configuration publish\Config\appProfiles.example.json  
+    2. Editez uniquement votre propre ``appProfiles.json`` selon l’une des méthodes cités ci-dessus.
+
+        ```bash
+        Config/appProfiles.example.json
+        ```
 
 ## 5. Installation de l’agent
 
