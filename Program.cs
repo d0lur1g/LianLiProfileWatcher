@@ -96,7 +96,8 @@ namespace LianLiProfileWatcher
                     builder.AddJsonFile(exampleCfg, optional: false, reloadOnChange: false);
                 })
                 .UseSerilog()
-                .UseConsoleLifetime()
+                .UseWindowsService() // Pour exécuter en tant que service Windows
+                                     //.UseConsoleLifetime() // Optionnellement pour debug
                 .ConfigureServices((ctx, services) =>
                 {
                     // Binding POCO + injection
