@@ -36,10 +36,15 @@ namespace LianLiProfileWatcher
                     restrictedToMinimumLevel: LogEventLevel.Information)
                 .CreateLogger();
 
+            // ❶ Déterminer le chemin du fichier de config
+            var configPath = ResolveConfigPath(args);
+            Log.Information("Config path resolved to: {Path}", configPath);
+
             try
             {
                 Log.Information("Démarrage de l'agent LianLiProfileWatcher");
-                CreateHostBuilder(args).Build().Run();
+                // ❷ Construire et lancer l’hôte
+                CreateHostBuilder(args, configPath).Build().Run();
                 return 0;
             }
             catch (Exception ex)
@@ -53,59 +58,48 @@ namespace LianLiProfileWatcher
             }
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
+        public static IHostBuilder CreateHostBuilder(string[] args, string configPath) =>
             Host
                 .CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration((ctx, builder) =>
-                {
-                    // On construit la liste des fichiers à charger, dans l’ordre :
-                    // CLI → path_config_perso → Variable d'ENV → LocalAppData → example (obligatoire)
-                    // 1) Support CLI --config
-                    var switchMappings = new Dictionary<string, string>
-                    {
-                        { "--config", "ConfigPath" }
-                    };
-                    builder.AddCommandLine(args, switchMappings);
-
-                    // 2) Si --config a été passé
-                    var cmdPath = ctx.Configuration["ConfigPath"];
-                    if (!string.IsNullOrEmpty(cmdPath))
-                    {
-                        builder.AddJsonFile(cmdPath!, optional: false, reloadOnChange: true);
-                    }
-
-                    // 3) Ou si variable d’env LIANLI_CONFIG_PATH
-                    var envPath = Environment.GetEnvironmentVariable("LIANLI_CONFIG_PATH");
-                    if (!string.IsNullOrEmpty(envPath))
-                    {
-                        builder.AddJsonFile(envPath!, optional: true, reloadOnChange: true);
-                    }
-
-                    // 4) Sinon on regarde dans LocalAppData
-                    var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)!;
-                    var userCfg = Path.Combine(localAppData,
-                                                    "LianLiProfileWatcher",
-                                                    "Config",
-                                                    "appProfiles.json");
-                    builder.AddJsonFile(userCfg, optional: true, reloadOnChange: true);
-
-                    // 5) Enfin, le template embarqué
-                    var exampleCfg = Path.Combine(AppContext.BaseDirectory,
-                                                 "Config",
-                                                 "appProfiles.example.json");
-                    builder.AddJsonFile(exampleCfg, optional: false, reloadOnChange: false);
-                })
                 .UseSerilog()
                 .UseWindowsService() // Pour exécuter en tant que service Windows
                                      //.UseConsoleLifetime() // Optionnellement pour debug
                 .ConfigureServices((ctx, services) =>
                 {
                     // Binding POCO + injection
-                    services.Configure<AppProfileConfig>(ctx.Configuration);
                     services.AddSingleton<IProfileApplier, ProfileApplier>();
                     services.AddSingleton<IForegroundProcessService, ForegroundProcessService>();
+                    services.AddSingleton<IConfigurationService>(_ =>
+                        new ConfigurationService(configPath));
                     services.AddHostedService<Worker>();
                 });
+
+        // On construit la liste des fichiers à charger, dans l’ordre :
+        // CLI → path_config_perso → Variable d'ENV → LocalAppData → example (obligatoire)
+        static string ResolveConfigPath(string[] args)
+        {
+            // 1) CLI --config
+            var cliIndex = Array.IndexOf(args, "--config");
+            if (cliIndex >= 0 && cliIndex < args.Length - 1)
+                return args[cliIndex + 1];
+
+            // 2) Env var
+            var env = Environment.GetEnvironmentVariable("LIANLI_CONFIG_PATH");
+            if (!string.IsNullOrEmpty(env))
+                return env;
+
+            // 3) LocalAppData
+            var localDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "LianLiProfileWatcher",
+                "Config");
+            var localFile = Path.Combine(localDir, "appProfiles.json");
+            if (File.Exists(localFile))
+                return localFile;
+
+            // 4) Template fallback (toujours présent dans publish/Config)
+            return Path.Combine(AppContext.BaseDirectory, "Config", "appProfiles.example.json");
+        }
 
     }
 }
