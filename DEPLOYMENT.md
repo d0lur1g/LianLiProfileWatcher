@@ -1,6 +1,7 @@
 # Guide de déploiement
 
-Ce document décrit pas à pas comment publier, installer, configurer et désinstaller l’agent **LianLiProfileWatcher**, en intégrant le mécanisme de configuration externe.
+> [!NOTE]
+> Ce document décrit pas à pas comment publier, installer, configurer et désinstaller l’agent **LianLiProfileWatcher**, en intégrant le mécanisme de configuration externe.
 
 ## 1. Prérequis
 
@@ -53,7 +54,7 @@ Compress-Archive `
 
 ## 4. Configuration de l’agent
 
-L’agent peut charger **une seule** configuration JSON, dont l’emplacement est résolu dans cet ordre :
+L’agent peut charger **une seule** configuration JSON, dont l’emplacement défini sera recherché dans cet ordre :
 
 1. **Argument CLI**
 
@@ -70,42 +71,21 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement es
 3. **Fichier local**
 
     ```shell
-    %LOCALAPPDATA%\LianLiProfileWatcher\Config\appProfiles.json
-    ```
-
-4. **Template intégré (fallback)**
-
-    ```bash
-    Config/appProfiles.example.json
-    ```
-
-    >⚙️ **Remarque** :  
-    > - Ne pas modifier ``appProfiles.example.json`` dans le dossier ``publish/`` → C’est un template versionné.  
-    > - Créez et éditez uniquement votre propre ``appProfiles.json`` selon l’une des méthodes ci-dessous.
-
-### Créer ou pointer votre fichier de config
-
-- **Via CLI** – pas de copie nécessaire :
-
-    ```powershell
-    .\LianLiProfileWatcher.exe --config "D:\<PATH_CONFIG>\appProfiles.json"
-    ```
-
-- **Via variable d’environnement** – sans déplacer de fichiers :
-
-    ```powershell
-    setx LIANLI_CONFIG_PATH "D:\<PATH_CONFIG>\appProfiles.json"
-    ```
-
-- **Via LocalAppData** – copier le template pour éditer :
-
-    ```powershell
     mkdir "$Env:LOCALAPPDATA\LianLiProfileWatcher\Config" -Force
     copy .\publish\Config\appProfiles.example.json `
         "$Env:LOCALAPPDATA\LianLiProfileWatcher\Config\appProfiles.json"
     ```
 
-- **Sinon**, éditez directement publish\Config\appProfiles.example.json puis copiez-le à l’un des emplacements ci-dessus.
+4. **Template intégré (fallback)**
+
+    > ⚠️ **REMARQUE** :  
+    > 📢 Ne pas modifier ``appProfiles.example.json`` dans le dossier ``publish/`` → C’est un template versionné.  
+    > 1. Créez un nouveau fichier basé sur le fichier exemple de configuration publish\Config\appProfiles.example.json  
+    > 2. Editez uniquement votre propre ``appProfiles.json`` selon l’une des méthodes cités ci-dessus.
+
+    ```bash
+    Config/appProfiles.example.json
+    ```
 
 ## 5. Installation de l’agent
 
@@ -119,42 +99,68 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement es
 >    - `scriptPath`
 >    - `default`
 >    - `profiles\apps`
->3. Ne commit jamais `Config/appProfiles.json` — il est ignoré par Git.
+>3. Ne jamais commit `Config/appProfiles.json` — il est ignoré par Git.
 
 ### 5.1 Copier les fichiers
 
-1. Créez le dossier d’installation, par exemple :
+1. **Méthode Automatique (RECOMMANDEE)**
 
-    ```makefile
-    C:\Program Files\LianLiProfileWatcher
+    Le script se trouve dans **`Scripts/install-service.ps1`**.
+
+    Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
+
+    ```powershell
+    .\install-service.ps1 `
+    -InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
+    -ServiceName "LianLiProfileWatcher-Agent" `
+    -ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
     ```
 
-2. Copiez **tout** le contenu de `publish/` (mais pas votre `appProfiles.json` perso) dans ce dossier.
+2. **Méthode manuelle**
+    1. Créez le dossier d’installation, par exemple :
+
+        ```makefile
+        C:\Program Files\LianLiProfileWatcher
+        ```
+
+    2. Copiez **tout** le contenu de `publish/` (mais pas votre `appProfiles.json` perso) dans ce dossier.
 
 ### 5.2 Configurer une tâche planifiée (recommandé)
 
 1. Ouvrez ***Planificateur de tâches*** (`askschd.msc`).
 2. Cliquez sur ***Créer une tâche…***.
-3. ***Général*** :
+3. Onglet ***Général*** :
     - Nom : `LianLiProfileWatcher-Agent`
-    - Cochez ***Masquer***
-    - Sélectionnez ***Exécuter que l’utilisateur soit connecté ou non***
-4. ***Déclencheurs*** → ***Nouveau…*** :
+    - Cochez :  
+    [**X**] ***N'exécuter que si l'utilisateur est connecté***  
+    [**X**] ***Exécuter avec les autorisations maximales***
+    - Configurer pour ***Windows 10***
+4. Onglet ***Déclencheurs*** → ***Nouveau…*** :
     - ***À l’ouverture de session***
-5. ***Actions*** → ***Nouvelle…*** :
-    - ***Programme/script*** :
+    - ***Utilisateur spécifique*** : Saisir vos identifiants de la session dans laquelle vous souhaitez faire fonctionner l'agent.
+    - Cochez :  
+    [**X**] ***Activée***
+5. Onglet ***Actions*** → ***Nouvelle…*** :
+    - ***Démarrer un programme*** :
 
     ```makefile
     C:\Program Files\LianLiProfileWatcher\LianLiProfileWatcher.exe
     ```
 
-    - ***Démarrer dans*** (optionnel) :
+    - ***Ajouter des arguments*** (optionnel selon votre méthode utilisée) :
 
     ```makefile
-    C:\Program Files\LianLiProfileWatcher
+    --config "D:\<PATH_CONFIG>\appProfiles.json"
     ```
 
-6. ***OK*** pour enregistrer.
+6. Onglet ***Actions***
+
+    - Cochez :  
+    [**X**] Autoriser l'exécution de la tâche à la demande  
+    [**X**] Arrêter la tâche si elle s'exécute plus de : (3 jours (par défaut))  
+    [**X**] Si la tâche en cours ne se termine pas sur demande, forcer son arrêt
+
+7. ***OK*** pour enregistrer.
 
 L’agent se lancera invisible à chaque logon.
 
