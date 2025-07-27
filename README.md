@@ -283,25 +283,68 @@ Un workflow GitHub Actions **`(.github/workflows/ci.yml)`** déclenche sur push/
 
 \+ de détails dans le fichier [DEPLOYMENT.md](DEPLOYMENT.md)
 
-Le script **`Scripts/install-service.ps1`** :
+Exécute ce script ainsi (depuis le dossier Scripts\) :
 
 ```powershell
-param($InstallDir="C:\Program Files\LianLiProfileWatcher",$ServiceName="LianLiProfileWatcher")
+.\install-service.ps1 `
+  -InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
+  -ServiceName "LianLiProfileWatcher-Agent" `
+  -ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
+```
 
-$ScriptDir = Split-Path $MyInvocation.MyCommand.Definition
+Le script positionné dans **`Scripts/install-service.ps1`** :
+
+```powershell
+param(
+    [string]$InstallDir = "C:\<MON_PATH>\LianLiProfileWatcher",
+    [string]$ServiceName = "LianLiProfileWatcher-Agent",
+    [string]$ConfigPath = "D:\<PATH_CONFIG>\appProfiles.json"
+)
+
+# 1. Déterminer les dossiers
+$ScriptDir = Split-Path $MyInvocation.MyCommand.Definition -Parent
 $PublishDir = Join-Path $ScriptDir '..\publish'
 
-# Nettoyage
-if (Test-Path $InstallDir) { Remove-Item $InstallDir -Recurse -Force }
+# 2. Nettoyage de l’ancien installDir
+if (Test-Path $InstallDir) {
+    Remove-Item $InstallDir -Recurse -Force
+    Write-Host "Nettoyage de l'ancien dossier d'installation '$InstallDir' effectué."
+}
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+Write-Host "Nouveau dossier d'installation créé à '$InstallDir'."
 
-# Copie
+# 3. Copier les binaires
 Copy-Item (Join-Path $PublishDir '*') $InstallDir -Recurse -Force
+Write-Host "Binaries copiés de '$PublishDir' vers '$InstallDir'."
 
-# Créer et démarrer le service (optionnel si vous ne l’utilisez plus)
-sc.exe create $ServiceName binPath= "`"$InstallDir\LianLiProfileWatcher.exe`"" start= auto
-sc.exe start $ServiceName
-Write-Host "Service installé et démarré."
+# 4. Construire la chaîne de lancement avec --config
+$exePath = Join-Path $InstallDir 'LianLiProfileWatcher.exe'
+$binPath = "`"$exePath`" --config `"$ConfigPath`""
+Write-Host "Chaîne de lancement construite : $binPath"
+
+# 5. Créer le service Windows (PowerShell) — gère mieux le quoting
+if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+    Write-Host "Le service '$ServiceName' existe déjà, suppression..."
+    Stop-Service   -Name $ServiceName -Force -ErrorAction SilentlyContinue
+    Write-Host "Service '$ServiceName' arrêté."
+    sc.exe delete  $ServiceName
+    Start-Sleep -Seconds 1
+    Write-Host "Service '$ServiceName' supprimé avec succès."
+}
+
+New-Service `
+    -Name        $ServiceName `
+    -BinaryPathName $binPath `
+    -DisplayName "LianLiProfileWatcher-Agent" `
+    -Description "Hook WinEvent & application de profils LianLi selon l'appli active" `
+    -StartupType Automatic
+    
+Write-Host "Service '$ServiceName' créé avec la chaîne de lancement '$binPath'."
+
+# 6. Démarrer le service
+Start-Service -Name $ServiceName
+
+Write-Host "Service '$ServiceName' installé et démarré avec config '$ConfigPath'."
 ```
 
 ### Script PowerShell de désinstallation
