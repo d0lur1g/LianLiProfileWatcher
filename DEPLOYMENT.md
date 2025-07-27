@@ -34,22 +34,22 @@ Le dossier `publish/` contient désormais :
 
 ## 3. Packaging
 
-Pour générer l’archive ZIP de la version v1.x.y :
+Pour générer l’archive ZIP de la version v<major>.<minor>.<patch> :
 
 ```powershell
 # Supprimer un ancien zip
-if (Test-Path .\lian-li-profile-watcher-v1.x.y.zip) {
-  Remove-Item .\lian-li-profile-watcher-v1.x.y.zip -Force
+if (Test-Path .\lian-li-profile-watcher-v<major>.<minor>.<patch>.zip) {
+  Remove-Item .\lian-li-profile-watcher-v<major>.<minor>.<patch>.zip -Force
 }
 
 # Créer le zip à partir du contenu de publish/
 Compress-Archive `
   -Path (Join-Path $PWD 'publish\*') `
-  -DestinationPath (Join-Path $PWD 'lian-li-profile-watcher-v1.x.y.zip') `
+  -DestinationPath (Join-Path $PWD 'lian-li-profile-watcher-v<major>.<minor>.<patch>.zip') `
   -Force
 ```
 
-→ Vous obtenez `lian-li-profile-watcher-v1.x.y.zip`, prêt à être attaché à une Release GitHub.
+→ Vous obtenez `lian-li-profile-watcher-v<major>.<minor>.<patch>.zip`, prêt à être attaché à une Release GitHub.
 
 ## 4. Configuration de l’agent
 
