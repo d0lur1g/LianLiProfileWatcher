@@ -1,44 +1,60 @@
 param(
-    [string]$InstallDir = "C:\Program Files\LianLiProfileWatcher",
-    [string]$ServiceName = "LianLiProfileWatcher"
+    [string]$InstallDir = "C:\<MON_PATH>\LianLiProfileWatcher",
+    [string]$ServiceName = "LianLiProfileWatcher-Agent",
+    [string]$ConfigPath = "D:\<PATH_CONFIG>\appProfiles.json"
 )
 
-# Répertoire où le script se trouve
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-
-# Chemin absolu vers le dossier publish (assumé un niveau au-dessus de Scripts/)
+# 1. Déterminer les dossiers
+$ScriptDir = Split-Path $MyInvocation.MyCommand.Definition -Parent
 $PublishDir = Join-Path $ScriptDir '..\publish'
 
-if (-not (Test-Path $PublishDir)) {
-    Throw "Le dossier publish est introuvable : $PublishDir"
-}
-
-# 1. Copier les fichiers publiés
-# 1.1 Supprimer l’ancien dossier s’il existe
+# 2. Nettoyage de l’ancien installDir
 if (Test-Path $InstallDir) {
-    Write-Host "Effacement de l’ancien dossier : $InstallDir"
-    Remove-Item -Recurse -Force $InstallDir
+    Remove-Item $InstallDir -Recurse -Force
+    Write-Host "Nettoyage de l'ancien dossier d'installation '$InstallDir' effectué."
+}
+New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+Write-Host "Nouveau dossier d'installation créé à '$InstallDir'."
+
+# 3. Copier les binaires
+Copy-Item (Join-Path $PublishDir '*') $InstallDir -Recurse -Force
+Write-Host "Binaries copiés de '$PublishDir' vers '$InstallDir'."
+
+# 4. Construire la chaîne de lancement avec --config
+$exePath = Join-Path $InstallDir 'LianLiProfileWatcher.exe'
+$binPath = "`"$exePath`" --config `"$ConfigPath`""
+Write-Host "Chaîne de lancement construite : $binPath"
+
+# 5. Créer le service Windows (PowerShell) — gère mieux le quoting
+if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+    Write-Host "Le service '$ServiceName' existe déjà, suppression..."
+    Stop-Service   -Name $ServiceName -Force -ErrorAction SilentlyContinue
+    Write-Host "Service '$ServiceName' arrêté."
+    sc.exe delete  $ServiceName
+    # Attendre que le service soit totalement supprimé :
+    Write-Host "Attente de la suppression définitive du service..."
+    $maxWait = 30   # secondes
+    $elapsed = 0
+    while (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+        Start-Sleep -Seconds 1
+        $elapsed++
+        if ($elapsed -ge $maxWait) {
+            Throw "Le service est toujours marqué pour suppression après $maxWait s. Veuillez redémarrer ou attendre."
+        }
+    }
+    Write-Host "Service supprimé, on peut recréer maintenant."
 }
 
-# 1.2 Créer proprement le dossier d’installation
-Write-Host "Création du dossier : $InstallDir"
-New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+New-Service `
+    -Name        $ServiceName `
+    -BinaryPathName $binPath `
+    -DisplayName "LianLiProfileWatcher-Agent" `
+    -Description "Hook WinEvent & application de profils LianLi selon l'appli active" `
+    -StartupType Automatic
+    
+Write-Host "Service '$ServiceName' créé avec la chaîne de lancement '$binPath'."
 
-# 1.3 Copier tous les fichiers et sous-dossiers de publish
-Write-Host "Copie des fichiers de $PublishDir vers $InstallDir"
-Copy-Item -Path (Join-Path $PublishDir '*') `
-    -Destination $InstallDir `
-    -Recurse -Force
+# 6. Démarrer le service
+Start-Service -Name $ServiceName
 
-# 2. Créer le service Windows
-Write-Host "Création du service $ServiceName"
-sc.exe create $ServiceName `
-    binPath= "`"$InstallDir\LianLiProfileWatcher.exe`"" `
-    DisplayName= "Lian Li Profile Watcher" `
-    start= auto
-
-# 3. Démarrer le service
-Write-Host "Démarrage du service $ServiceName"
-sc.exe start $ServiceName
-
-Write-Host "Installation terminée."
+Write-Host "Service '$ServiceName' installé et démarré avec config '$ConfigPath'."

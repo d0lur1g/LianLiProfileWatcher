@@ -1,6 +1,6 @@
 param(
-    [string]$InstallDir = "C:\Program Files\LianLiProfileWatcher",
-    [string]$ServiceName = "LianLiProfileWatcher"
+    [string]$InstallDir = "C:\<MON_PATH>\LianLiProfileWatcher",
+    [string]$ServiceName = "LianLiProfileWatcher-Agent"
 )
 
 # 1. Arrêter le service

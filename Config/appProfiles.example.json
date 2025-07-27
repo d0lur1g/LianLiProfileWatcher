@@ -1,7 +1,7 @@
 {
   "_COMMENT": "### Remarque ### : Ne pas modifier appProfiles.example.json dans le dossier publish/. C’est un template versionné. Créez et éditez uniquement votre propre appProfiles.json",
-  "baseFolder": "<ADD_YOUR_PATH_HERE>",
-  "destination": "C:\\<ADD_YOUR_PATH_HERE>\\appdata",
+  "baseFolder": "<ADD_YOUR_PATH_HERE>\\profiles",
+  "destination": "<ADD_YOUR_PATH_HERE>\\Lian-Li\\L-Connect 3\\appdata",
   "scriptPath": "<ADD_YOUR_PATH_HERE>\\lian_li_import.ps1",
   "default": "profile-default",
   "profiles": {
