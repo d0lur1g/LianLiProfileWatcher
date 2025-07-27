@@ -3,6 +3,23 @@
 > [!NOTE]
 > Ce document décrit pas à pas comment publier, installer, configurer et désinstaller l’agent **LianLiProfileWatcher**, en intégrant le mécanisme de configuration externe.
 
+- [Guide de déploiement](#guide-de-déploiement)
+  - [1. Prérequis](#1-prérequis)
+  - [2. Publication](#2-publication)
+  - [3. Packaging](#3-packaging)
+  - [4. Configuration de l’agent](#4-configuration-de-lagent)
+  - [5. Installation de l’agent](#5-installation-de-lagent)
+    - [5.1 - Copier les fichiers](#51---copier-les-fichiers)
+      - [Méthode Automatique (RECOMMANDEE)](#méthode-automatique-recommandee)
+      - [Méthode manuelle](#méthode-manuelle)
+    - [5.2 - Configurer une tâche planifiée (recommandé)](#52---configurer-une-tâche-planifiée-recommandé)
+    - [5.3 - Clé de registre Run (alternative)](#53---clé-de-registre-run-alternative)
+  - [6. Vérification](#6-vérification)
+  - [7. Désinstallation](#7-désinstallation)
+    - [7.1 - Désinstallation de la tâche planifiée](#71---désinstallation-de-la-tâche-planifiée)
+    - [7.2 - Désinstallation du service Windows](#72---désinstallation-du-service-windows)
+  - [8. Architecture déployée](#8-architecture-déployée)
+
 ## 1. Prérequis
 
 - **Windows 10/11 x64**  
@@ -102,31 +119,32 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement d�
 >    - `profiles\apps`
 >3. Ne jamais commit `Config/appProfiles.json` — il est ignoré par Git.
 
-### 5.1 Copier les fichiers
+### 5.1 - Copier les fichiers
 
-1. **Méthode Automatique (RECOMMANDEE)**
+#### Méthode Automatique (RECOMMANDEE)
 
-    Le script se trouve dans **`Scripts/install-service.ps1`**.
+Le **Script PowerShell d'installation** se trouve dans **`Scripts/install-service.ps1`**.
 
-    Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
+Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
 
-    ```powershell
-    .\install-service.ps1 `
-    -InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
-    -ServiceName "LianLiProfileWatcher-Agent" `
-    -ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
+```powershell
+.\install-service.ps1 `
+-InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
+-ServiceName "LianLiProfileWatcher-Agent" `
+-ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
+```
+
+#### Méthode manuelle
+
+1. Créez le dossier d’installation, par exemple :
+
+    ```makefile
+    C:\Program Files\LianLiProfileWatcher
     ```
 
-2. **Méthode manuelle**
-    1. Créez le dossier d’installation, par exemple :
+2. Copiez **tout** le contenu de `publish/` (mais pas votre `appProfiles.json` perso) dans ce dossier.
 
-        ```makefile
-        C:\Program Files\LianLiProfileWatcher
-        ```
-
-    2. Copiez **tout** le contenu de `publish/` (mais pas votre `appProfiles.json` perso) dans ce dossier.
-
-### 5.2 Configurer une tâche planifiée (recommandé)
+### 5.2 - Configurer une tâche planifiée (recommandé)
 
 1. Ouvrez ***Planificateur de tâches*** (`askschd.msc`).
 2. Cliquez sur ***Créer une tâche…***.
@@ -165,6 +183,18 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement d�
 
 L’agent se lancera invisible à chaque logon.
 
+### 5.3 - Clé de registre Run (alternative)
+
+1. Ouvrez regedit.
+2. Allez à : **`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`**
+3. Créez une Valeur chaîne **`LianLiProfileWatcher`** dont la donnée est :
+
+    ```arduino
+    "C:\Program Files\LianLiProfileWatcher\LianLiProfileWatcher.exe"
+    ```
+
+    À la prochaine connexion, l’agent démarrera.
+
 ## 6. Vérification
 
 - Ouvrez ou reconnectez votre session Windows.
@@ -183,12 +213,26 @@ L’agent se lancera invisible à chaque logon.
 
 ## 7. Désinstallation
 
+### 7.1 - Désinstallation de la tâche planifiée
+
 1. Ouvrez ***Planificateur de tâches***, supprimez la tâche ***LianLiProfileWatcher-Agent***.
 2. Supprimez le dossier :
 
     ```makefile
     C:\Program Files\LianLiProfileWatcher
     ```
+
+### 7.2 - Désinstallation du service Windows
+
+Le Script **PowerShell de désinstallation** ***`Scripts/uninstall-service.ps1`*** :
+
+Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
+
+```powershell
+.\uninstall-service.ps1 `
+-InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
+-ServiceName "LianLiProfileWatcher-Agent" `
+```
 
 ## 8. Architecture déployée
 

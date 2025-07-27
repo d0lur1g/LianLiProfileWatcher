@@ -11,37 +11,38 @@ Le service `LianLiProfileWatcher` s’adresse aux utilisateurs et possesseurs de
 
  Ce service a pour objectif de :
 
+> [!NOTE]
 > Un **agent Windows léger** qui détecte l’application au premier plan (via un **`hook WinEvent`**) et applique automatiquement un profil prédéfini (fichiers de configuration, dossiers, services) en fonction de l’application active et en temps réel.
 
 ---
 
-## Table des matières
-
-1. [🧱 Architecture et structure du projet](#-architecture-et-structure-du-projet)  
-    1. [📂 Architecture](#-architecture)
-    2. [📦 Structure du projet](#-structure-du-projet)
-2. [⚙️ Prérequis](#️-prérequis)  
-3. [🛠️ Installation et build](#️-installation-et-build)  
-    1. [Cloner le dépôt](#cloner-le-dépôt)  
-    2. [Restaurer et compiler](#restaurer-et-compiler)  
-    3. [Publier l’agent](#publier-lagent)  
-4. [🔧 Configuration](#-configuration)
-5. [🗺️ Fonctionnement](#️-fonctionnement)  
-    1. [🗺️ Résolution du profil à appliquer](#️-résolution-du-profil-à-appliquer)  
-    2. [📁 Application du profil](#-application-du-profil)  
-    3. [🔁 Détection et debounce](#-détection-et-debounce)  
-6. [🚀 Exécution & debug](#-exécution--debug)  
-    1. [En mode console](#en-mode-console)  
-    2. [Logs](#logs)  
-7. [✅ Tests unitaires](#-tests-unitaires)  
-8. [🛡️ Intégration Continue (CI)](#️-intégration-continue-ci)  
-9. [📦 Packaging & déploiement](#-packaging--déploiement)  
-    1. [Script PowerShell d’installation](#script-powershell-dinstallation)  
-    2. [Script PowerShell de désinstallation](#script-powershell-de-désinstallation)  
-10. [🔄 Lancement automatique au logon](#-lancement-automatique-au-logon)  
-    1. [Tâche planifiée “At logon”](#tâche-planifiée-at-logon-recommandé)  
-    2. [Clé de registre Run](#clé-de-registre-run-alternative)  
-11. [❓ Dépannage](#-dépannage)  
+- [Lian Li Profile Watcher](#lian-li-profile-watcher)
+  - [🧩 **Objectif général**](#-objectif-général)
+  - [🧱 Architecture et structure du projet](#-architecture-et-structure-du-projet)
+    - [📂 Architecture](#-architecture)
+    - [📦 Structure du projet](#-structure-du-projet)
+  - [⚙️ Prérequis](#️-prérequis)
+  - [🛠️ Installation et build](#️-installation-et-build)
+    - [Cloner le dépôt](#cloner-le-dépôt)
+    - [Restaurer et compiler](#restaurer-et-compiler)
+    - [Publier l’agent](#publier-lagent)
+  - [🔧 Configuration](#-configuration)
+  - [🗺️ Fonctionnement](#️-fonctionnement)
+    - [🗺️ Résolution du profil à appliquer](#️-résolution-du-profil-à-appliquer)
+    - [📁 Application du profil](#-application-du-profil)
+    - [🔁 Détection et debounce](#-détection-et-debounce)
+  - [🚀 Exécution \& debug](#-exécution--debug)
+    - [En mode console](#en-mode-console)
+    - [Logs](#logs)
+  - [✅ Tests unitaires](#-tests-unitaires)
+  - [🛡️ Intégration Continue (CI)](#️-intégration-continue-ci)
+  - [📦 Packaging \& déploiement](#-packaging--déploiement)
+    - [Script PowerShell d’installation](#script-powershell-dinstallation)
+    - [Script PowerShell de désinstallation](#script-powershell-de-désinstallation)
+  - [🔄 Lancement automatique au logon](#-lancement-automatique-au-logon)
+    - [⏲️ Tâche planifiée “At logon” (recommandé)](#️-tâche-planifiée-at-logon-recommandé)
+    - [🗝️ Clé de registre Run (alternative)](#️-clé-de-registre-run-alternative)
+  - [❓ Dépannage](#-dépannage)
 
 ---
 
@@ -58,7 +59,7 @@ Le service `LianLiProfileWatcher` s’adresse aux utilisateurs et possesseurs de
 | `Infrastructure/Appliers/ProfileApplier.cs`          | Logique d’application d’un profil : nettoyage des anciens dossiers, copie des nouveaux, et redémarrage du service  |
 | `ForegroundProcessService.cs`                        | Extrait le nom du processus au premier plan |
 
-## 📦 Structure du projet
+### 📦 Structure du projet
 
 ```bash
 LianLiProfileWatcher/
@@ -142,13 +143,13 @@ dotnet build --configuration Release
 ### Publier l’agent
 
 ```powershell
-dotnet publish .\LianLiProfileWatcher.csproj `
+dotnet publish .\src\LianLiProfileWatcher.csproj `
   -c Release `
   -r win-x64 `
   --self-contained false `
   -o .\publish
 
-> Exemple : 'dotnet publish .\LianLiProfileWatcher.csproj -c Release -o publish'
+> Exemple : 'dotnet publish .\src\LianLiProfileWatcher.csproj -c Release -o publish'
 ```
 
 Le dossier **`publish/`** contient l’exécutable, les **`DLLs`** et **`Config/appProfiles.json`**.
@@ -176,9 +177,9 @@ D:\Configs\appProfiles.json
 
 ```json
 {
-  "baseFolder": "S:\\Software\\LianLi-L-Connect3\\Profiles",
-  "destination": "C:\\Users\\<YOUR_NAME>\\AppData\\Local\\LianLiProfileWatcher\\ActiveProfile",
-  "scriptPath": "S:\\Scripts\\lian_li_import.ps1",
+  "baseFolder": "<ADD_YOUR_PATH_HERE>\\profiles",
+  "destination": "<ADD_YOUR_PATH_HERE>\\Lian-Li\\L-Connect 3\\appdata",
+  "scriptPath": "<ADD_YOUR_PATH_HERE>\\lian_li_import.ps1",
   "default": "profile-default",
   "profiles": {
     "chrome": "profile-chrome",
@@ -191,7 +192,7 @@ D:\Configs\appProfiles.json
 
 ## 🗺️ Fonctionnement
 
-## 🗺️ Résolution du profil à appliquer
+### 🗺️ Résolution du profil à appliquer
 
 - À chaque détection d’une nouvelle fenêtre :
   1. On extrait le nom du processus (sans extension, en minuscules).
@@ -201,7 +202,7 @@ D:\Configs\appProfiles.json
 
 ✅ **But** : lier chaque application à un **profil visuel personnalisé** (ou mode générique).
 
-## 📁 Application du profil
+### 📁 Application du profil
 
 - **Principe** :
   - Un **profil** est un dossier sous **`baseFolder`** : **`baseFolder\<profil>`**.
@@ -213,7 +214,7 @@ D:\Configs\appProfiles.json
 
 ✅ **But** : rendre actif le style lumineux défini par l’utilisateur.
 
-## 🔁 Détection et debounce
+### 🔁 Détection et debounce
 
 - **Comportement attendu** :
   - Ne pas réappliquer un profil si l’utilisateur revient sur la même fenêtre.
@@ -281,75 +282,26 @@ Un workflow GitHub Actions **`(.github/workflows/ci.yml)`** déclenche sur push/
 
 ### Script PowerShell d’installation
 
-\+ de détails dans le fichier [DEPLOYMENT.md](DEPLOYMENT.md)
+\+ de détails dans le fichier [DEPLOYMENT.md > Copier les fichiers + Installation du service](DEPLOYMENT.md#51---copier-les-fichiers)
 
-Exécute ce script ainsi (depuis le dossier Scripts\) :
+Le script se trouve dans **`Scripts/install-service.ps1`**.
+
+Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
 
 ```powershell
 .\install-service.ps1 `
-  -InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
-  -ServiceName "LianLiProfileWatcher-Agent" `
-  -ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
-```
-
-Le script positionné dans **`Scripts/install-service.ps1`** :
-
-```powershell
-param(
-    [string]$InstallDir = "C:\<MON_PATH>\LianLiProfileWatcher",
-    [string]$ServiceName = "LianLiProfileWatcher-Agent",
-    [string]$ConfigPath = "D:\<PATH_CONFIG>\appProfiles.json"
-)
-
-# 1. Déterminer les dossiers
-$ScriptDir = Split-Path $MyInvocation.MyCommand.Definition -Parent
-$PublishDir = Join-Path $ScriptDir '..\publish'
-
-# 2. Nettoyage de l’ancien installDir
-if (Test-Path $InstallDir) {
-    Remove-Item $InstallDir -Recurse -Force
-    Write-Host "Nettoyage de l'ancien dossier d'installation '$InstallDir' effectué."
-}
-New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-Write-Host "Nouveau dossier d'installation créé à '$InstallDir'."
-
-# 3. Copier les binaires
-Copy-Item (Join-Path $PublishDir '*') $InstallDir -Recurse -Force
-Write-Host "Binaries copiés de '$PublishDir' vers '$InstallDir'."
-
-# 4. Construire la chaîne de lancement avec --config
-$exePath = Join-Path $InstallDir 'LianLiProfileWatcher.exe'
-$binPath = "`"$exePath`" --config `"$ConfigPath`""
-Write-Host "Chaîne de lancement construite : $binPath"
-
-# 5. Créer le service Windows (PowerShell) — gère mieux le quoting
-if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-    Write-Host "Le service '$ServiceName' existe déjà, suppression..."
-    Stop-Service   -Name $ServiceName -Force -ErrorAction SilentlyContinue
-    Write-Host "Service '$ServiceName' arrêté."
-    sc.exe delete  $ServiceName
-    Start-Sleep -Seconds 1
-    Write-Host "Service '$ServiceName' supprimé avec succès."
-}
-
-New-Service `
-    -Name        $ServiceName `
-    -BinaryPathName $binPath `
-    -DisplayName "LianLiProfileWatcher-Agent" `
-    -Description "Hook WinEvent & application de profils LianLi selon l'appli active" `
-    -StartupType Automatic
-    
-Write-Host "Service '$ServiceName' créé avec la chaîne de lancement '$binPath'."
-
-# 6. Démarrer le service
-Start-Service -Name $ServiceName
-
-Write-Host "Service '$ServiceName' installé et démarré avec config '$ConfigPath'."
+-InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
+-ServiceName "LianLiProfileWatcher-Agent" `
+-ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
 ```
 
 ### Script PowerShell de désinstallation
 
+\+ de détails dans le fichier [DEPLOYMENT.md > Désinstallation du service](DEPLOYMENT.md#72---désinstallation-du-service-windows)
+
 Le script **`Scripts/uninstall-service.ps1`** :
+
+Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
 
 ```powershell
 param($InstallDir="C:\Program Files\LianLiProfileWatcher",$ServiceName="LianLiProfileWatcher")
@@ -361,30 +313,13 @@ Write-Host "Service désinstallé et fichiers supprimés."
 
 ## 🔄 Lancement automatique au logon
 
-### Tâche planifiée “At logon” (recommandé)
+### ⏲️ Tâche planifiée “At logon” (recommandé)
 
-1. Ouvrez Planificateur de tâches (***taskschd.msc***).
-2. Créer une tâche…
-    1. **Général** : nom **`LianLiProfileWatcher-Agent`**, cocher « Masquer », « Exécuter que l’utilisateur soit connecté ou non ».
-    2. **Déclencheurs** : nouveau déclencheur « *À l’ouverture de session* ».
-    3. **Actions** :
-        - Démarrer un programme → « *Cible* » vers **`publish\LianLiProfileWatcher.exe`**,
-        - « *Démarrer dans* » = dossier **`publish`**.
-        - Enregistrez.
+\+ de détails dans le fichier [DEPLOYMENT.md > Créer une tâche planifiée](DEPLOYMENT.md#52---configurer-une-tâche-planifiée-recommandé)
 
-L’agent tournera en arrière-plan (pas de console à l’écran).
+### 🗝️ Clé de registre Run (alternative)
 
-### Clé de registre Run (alternative)
-
-1. Ouvrez regedit.
-2. Allez à : **`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`**
-3. Créez une Valeur chaîne **`LianLiProfileWatcher`** dont la donnée est :
-
-```arduino
-"C:\Program Files\LianLiProfileWatcher\LianLiProfileWatcher.exe"
-```
-
-À la prochaine connexion, l’agent démarrera.
+\+ de détails dans le fichier [DEPLOYMENT.md > Créer une clé de registre](DEPLOYMENT.md#53---clé-de-registre-run-alternative)
 
 ## ❓ Dépannage
 
@@ -397,10 +332,11 @@ L’agent tournera en arrière-plan (pas de console à l’écran).
   - Vérifiez que **`WinEventProc`** logge bien les processus (test en console).
 - **Service Windows vs agent**
   - Les services Windows ne peuvent pas hooker des sessions utilisateurs.
-  - Utilisez exclusivement l’agent en session utilisateur.
+  - Utilisez **exclusivement l’agent** (Tâche planifiée) en session utilisateur.
 
 Pour plus de détails, voir la documentation complète :
 
+- [DEPLOYMENT](DEPLOYMENT.md)
 - [CHANGELOG](CHANGELOG.md)  
 - [CONTRIBUTING](CONTRIBUTING.md)  
 - [CODE OF CONDUCT](CODE_OF_CONDUCT.md)  
