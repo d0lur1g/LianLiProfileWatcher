@@ -209,7 +209,7 @@ D:\Configs\appProfiles.json
 - **Pour appliquer** :
     1. Supprimer les anciens fichiers dans destination.
     2. Copier récursivement **`baseFolder\<profil>\`** vers **`destination\`**.
-    3. *Optionnel* : exécuter un script (PowerShell, relancer un service, etc.).
+    3. Relancer un service dédié à L-Connect.
 
 ✅ **But** : rendre actif le style lumineux défini par l’utilisateur.
 
@@ -276,12 +276,6 @@ Un workflow GitHub Actions **`(.github/workflows/ci.yml)`** déclenche sur push/
 2. `dotnet build --configuration Release`
 3. `dotnet test --configuration Release`
 4. (*optionnel*) collecte de couverture via Coverlet
-
-Ajoutez dans README.md :
-
-```markdown
-[![CI](https://github.com/<VOTRE-COMPTE>/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/<VOTRE-COMPTE>/LianLiProfileWatcher/actions/workflows/ci.yml)
-```
 
 ## 📦 Packaging & déploiement
 
