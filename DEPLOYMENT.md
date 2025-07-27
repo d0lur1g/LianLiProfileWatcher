@@ -58,13 +58,13 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement es
 1. **Argument CLI**
 
     ```powershell
-    .\LianLiProfileWatcher.exe --config "D:\Configs\appProfiles.json"
+    .\LianLiProfileWatcher.exe --config "D:\<PATH_CONFIG>\appProfiles.json"
     ```
 
 2. **Variable d’environnement**
 
     ```powershell
-    setx LIANLI_CONFIG_PATH "D:\Configs\appProfiles.json"
+    setx LIANLI_CONFIG_PATH "D:\<PATH_CONFIG>\appProfiles.json"
     ```
 
 3. **Fichier local**
@@ -88,13 +88,13 @@ L’agent peut charger **une seule** configuration JSON, dont l’emplacement es
 - **Via CLI** – pas de copie nécessaire :
 
     ```powershell
-    .\LianLiProfileWatcher.exe --config "D:\MesConfigs\appProfiles.json"
+    .\LianLiProfileWatcher.exe --config "D:\<PATH_CONFIG>\appProfiles.json"
     ```
 
 - **Via variable d’environnement** – sans déplacer de fichiers :
 
     ```powershell
-    setx LIANLI_CONFIG_PATH "D:\MesConfigs\appProfiles.json"
+    setx LIANLI_CONFIG_PATH "D:\<PATH_CONFIG>\appProfiles.json"
     ```
 
 - **Via LocalAppData** – copier le template pour éditer :
