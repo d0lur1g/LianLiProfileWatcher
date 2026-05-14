@@ -1,344 +1,338 @@
 # Lian Li Profile Watcher
 
 [![CI](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/<TonCompte>/LianLiProfileWatcher.svg)](https://codecov.io/gh/d0lur1g/LianLiProfileWatcher)
 [![Release](https://img.shields.io/github/v/release/d0lur1g/LianLiProfileWatcher)](https://github.com/d0lur1g/LianLiProfileWatcher/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🧩 **Objectif général**
+Agent Windows léger qui détecte l'application au premier plan via un **hook WinEvent** (`SetWinEventHook`) et applique automatiquement un profil L-Connect 3 prédéfini en fonction de l'application active, en temps réel.
 
-Le service `LianLiProfileWatcher` s’adresse aux utilisateurs et possesseurs de systèmes de watercooling, de ventilateurs RGB (*FAN control*) de la marque **Lian Li**, ainsi qu’aux utilisateurs du logiciel **L-Connect 3**.
-
- Ce service a pour objectif de :
-
-> [!NOTE]
-> Un **agent Windows léger** qui détecte l’application au premier plan (via un **`hook WinEvent`**) et applique automatiquement un profil prédéfini (fichiers de configuration, dossiers, services) en fonction de l’application active et en temps réel.
+> **Compatibilité** : L-Connect 3 **v2.1.20+** — Windows 10/11 x64
 
 ---
 
-- [Lian Li Profile Watcher](#lian-li-profile-watcher)
-  - [🧩 **Objectif général**](#-objectif-général)
-  - [🧱 Architecture et structure du projet](#-architecture-et-structure-du-projet)
-    - [📂 Architecture](#-architecture)
-    - [📦 Structure du projet](#-structure-du-projet)
-  - [⚙️ Prérequis](#️-prérequis)
-  - [🛠️ Installation et build](#️-installation-et-build)
-    - [Cloner le dépôt](#cloner-le-dépôt)
-    - [Restaurer et compiler](#restaurer-et-compiler)
-    - [Publier l’agent](#publier-lagent)
-  - [🔧 Configuration](#-configuration)
-  - [🗺️ Fonctionnement](#️-fonctionnement)
-    - [🗺️ Résolution du profil à appliquer](#️-résolution-du-profil-à-appliquer)
-    - [📁 Application du profil](#-application-du-profil)
-    - [🔁 Détection et debounce](#-détection-et-debounce)
-  - [🚀 Exécution \& debug](#-exécution--debug)
-    - [En mode console](#en-mode-console)
-    - [Logs](#logs)
-  - [✅ Tests unitaires](#-tests-unitaires)
-  - [🛡️ Intégration Continue (CI)](#️-intégration-continue-ci)
-  - [📦 Packaging \& déploiement](#-packaging--déploiement)
-    - [Script PowerShell d’installation](#script-powershell-dinstallation)
-    - [Script PowerShell de désinstallation](#script-powershell-de-désinstallation)
-  - [🔄 Lancement automatique au logon](#-lancement-automatique-au-logon)
-    - [⏲️ Tâche planifiée “At logon” (recommandé)](#️-tâche-planifiée-at-logon-recommandé)
-    - [🗝️ Clé de registre Run (alternative)](#️-clé-de-registre-run-alternative)
-  - [❓ Dépannage](#-dépannage)
+## Table des matières
+
+- [Prérequis](#️-prérequis)
+- [Architecture](#-architecture)
+- [Installation et build](#️-installation-et-build)
+- [Configuration](#-configuration)
+- [Fonctionnement](#️-fonctionnement)
+- [Exécution et logs](#-exécution--logs)
+- [Lancement automatique](#-lancement-automatique-au-démarrage)
+- [Tests unitaires](#-tests-unitaires)
+- [Intégration Continue](#️-intégration-continue-ci)
+- [Dépannage](#-dépannage)
 
 ---
-
-## 🧱 Architecture et structure du projet
-
-### 📂 Architecture
-
-| Dossier / Composant                                  | Rôle                                                                                                              |
-| -----------------------------------------------------| ----------------------------------------------------------------------------------------------------------------- |
-| `Program.cs`                                         | Configure le Generic Host (.NET), Serilog, les services DI, les sources de config et enregistre le `Worker`                                        |
-| `Worker.cs`                                          | HostedService principal : installe le hook WinEvent, détecte le changement de fenêtre active et appelle `ProfileApplier` |
-| `ConfigurationService / IOptionsMonitor`             | Charge et surveille le JSON de config (CLI, env var, LocalAppData, template) et expose le POCO `AppProfileConfig`    |
-| `Models/AppProfileConfig.cs`                         | Déclare la classe C# correspondant à la structure JSON de configuration                                          |
-| `Infrastructure/Appliers/ProfileApplier.cs`          | Logique d’application d’un profil : nettoyage des anciens dossiers, copie des nouveaux, et redémarrage du service  |
-| `ForegroundProcessService.cs`                        | Extrait le nom du processus au premier plan |
-
-### 📦 Structure du projet
-
-```bash
-LianLiProfileWatcher/
-├─ .git/
-├─ .github/
-│  └─ workflows/
-│     └─ ci.yml
-├─ .vscode/
-│  └─ extensions.json
-├─ Application/
-│  └─ Interfaces/
-│     ├─ IConfigurationService.cs
-│     ├─ IForegroundProcessService.cs
-│     └─ IProfileApplier.cs
-├─ bin/
-├─ Config/
-│  └─ appProfiles.example.json
-├─ docs/
-│  └─ architecture.puml
-├─ Infrastructure/
-│  └─ Appliers/
-│     └─ ProfileApplier.cs
-├─ Models/
-│  └─ AppProfileConfig.cs
-├─ obj/
-├─ Properties/
-│  └─ launchSettings.json
-├─ Scripts/
-│  ├─ install-service.ps1
-│  └─ uninstall-service.ps1
-├─ Services/
-│  ├─ ConfigurationService.cs
-│  ├─ ForegroundProcessService.cs
-│  └─ NativeMethods.cs
-├─ tests/
-│  └─ LianLiProfileWatcher.Tests/
-│     ├─ bin/
-│     ├─ obj/
-│     ├─ ConfigurationServiceTests.cs
-│     ├─ LianLiProfileWatcher.Tests.csproj
-│     └─ ProfileApplierTests.cs
-├─ .gitignore
-├─ CHANGELOG.md
-├─ CODE_OF_CONDUCT.md
-├─ CONTRIBUTING.md
-├─ DEPLOYMENT.md
-├─ LianLiProfileWatcher.csproj
-├─ LianLiProfileWatcher.sln
-├─ LICENSE
-├─ Program.cs
-├─ README.md
-└─ Worker.cs
-
-```
 
 ## ⚙️ Prérequis
 
-- **Windows 10/11 x64**  
-- **.NET 9.0 SDK** installé ([télécharger](https://dotnet.microsoft.com/download))  
-- **PowerShell 5+** (intégré)  
-- **Accès en écriture** sur :
-  - `%LOCALAPPDATA%` pour les logs et sur le dossier d’installation (ex. `C:\Program Files\…`)  
-  - le dossier d’installation et/ou l’emplacement de votre configuration personnelle
+- **Windows 10 / 11 x64**
+- **.NET 9.0 SDK** — [télécharger](https://dotnet.microsoft.com/download)
+- **L-Connect 3 v2.1.20+** installé et en cours d'exécution
+- **PowerShell 5+** (intégré à Windows)
+- Droits d'écriture sur `C:\ProgramData\Lian-Li\L-Connect 3\` (requis pour appliquer les profils)
+
+---
+
+## 🧱 Architecture
+
+### Composants
+
+| Fichier | Rôle |
+|---|---|
+| `Program.cs` | Configure le Generic Host .NET, Serilog, l'injection de dépendances et enregistre le `Worker` |
+| `Worker.cs` | Service principal : installe le hook WinEvent sur thread STA dédié, détecte le changement de fenêtre active, appelle `ProfileApplier` |
+| `Services/ConfigurationService.cs` | Charge et surveille le JSON de config (CLI → ENV → LocalAppData → template) ; expose le POCO `AppProfileConfig` |
+| `Models/AppProfileConfig.cs` | Modèle C# correspondant à la structure JSON de configuration |
+| `Infrastructure/Appliers/ProfileApplier.cs` | Applique un profil : nettoyage des dossiers cibles, copie récursive, redémarrage du service `LConnectService` |
+| `Services/ForegroundProcessService.cs` | Extrait le nom du processus au premier plan via les API Win32 |
+| `Services/NativeMethods.cs` | P/Invoke : `SetWinEventHook`, `UnhookWinEvent`, `GetWindowThreadProcessId` |
+
+### Structure du projet
+
+```
+LianLiProfileWatcher/
+├── .github/workflows/ci.yml
+├── Application/Interfaces/
+│   ├── IConfigurationService.cs
+│   ├── IForegroundProcessService.cs
+│   └── IProfileApplier.cs
+├── Config/
+│   └── appProfiles.example.json
+├── Infrastructure/Appliers/
+│   └── ProfileApplier.cs
+├── Models/
+│   └── AppProfileConfig.cs
+├── Scripts/
+│   ├── install-service.ps1
+│   └── uninstall-service.ps1
+├── Services/
+│   ├── ConfigurationService.cs
+│   ├── ForegroundProcessService.cs
+│   └── NativeMethods.cs
+├── tests/LianLiProfileWatcher.Tests/
+│   ├── ConfigurationServiceTests.cs
+│   └── ProfileApplierTests.cs
+├── docs/architecture.puml
+├── Program.cs
+├── Worker.cs
+└── LianLiProfileWatcher.csproj
+```
+
+---
 
 ## 🛠️ Installation et build
 
-### Cloner le dépôt
+### 1. Cloner le dépôt
 
 ```bash
 git clone https://github.com/d0lur1g/LianLiProfileWatcher.git
 cd LianLiProfileWatcher
 ```
 
-### Restaurer et compiler
-
-```bash
-dotnet restore
-dotnet build --configuration Release
-```
-
-### Publier l’agent
+### 2. Restaurer, compiler et publier
 
 ```powershell
-dotnet publish .\src\LianLiProfileWatcher.csproj `
-  -c Release `
-  -r win-x64 `
-  --self-contained false `
-  -o .\publish
+# Nettoyage
+dotnet clean
 
-> Exemple : 'dotnet publish .\src\LianLiProfileWatcher.csproj -c Release -o publish'
+# Restauration des dépendances
+dotnet restore
+
+# Vérification build
+dotnet build -c Release
+
+# Publication — exécutable autonome Windows x64
+dotnet publish -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true `
+  -p:EnableCompressionInSingleFile=true `
+  -o .\publish\
 ```
 
-Le dossier **`publish/`** contient l’exécutable, les **`DLLs`** et **`Config/appProfiles.json`**.
+L'exécutable final se trouve dans `.\publish\LianLiProfileWatcher.exe`.
+
+---
 
 ## 🔧 Configuration
 
-> ### 📢 Avant de démarrer
->
->1. Choisissez la manière de définir votre fichier de config sans **JAMAIS** toucher au fichier  `Config/appProfiles.example.json`.  
-> Voir fichier [DEPLOYMENT.md > Créer ou pointer votre fichier de config](DEPLOYMENT.md)
->2. Adaptez les valeurs selon votre installation locale:
->    - ***`_COMMENT` → A SUPPRIMER DANS VOTRE FICHIER DE CONFIGURATION PERSONNEL***
->    - `baseFolder`
->    - `destination`
->    - `scriptPath`
->    - `default`
->    - `profiles\apps`
->3. Ne commit jamais `Config/appProfiles.json` — il est ignoré par Git.
+### Fichier `appProfiles.json`
 
-*Exemple de fichier de configuration* :
-
-```makefile
-D:\Configs\appProfiles.json
-```
+Copie `Config/appProfiles.example.json` vers un emplacement personnel (ne jamais modifier l'exemple, ne jamais committer ton fichier personnel — il est dans `.gitignore`).
 
 ```json
 {
-  "baseFolder": "<ADD_YOUR_PATH_HERE>\\profiles",
-  "destination": "<ADD_YOUR_PATH_HERE>\\Lian-Li\\L-Connect 3\\appdata",
-  "scriptPath": "<ADD_YOUR_PATH_HERE>\\lian_li_import.ps1",
-  "default": "profile-default",
+  "baseFolder": "C:\\LianLiProfiles",
+  "destination": "C:\\ProgramData\\Lian-Li\\L-Connect 3",
+  "serviceName": "LConnectService",
+  "default": "default",
   "profiles": {
-    "chrome": "profile-chrome",
-    "notepad": "profile-notepad",
-    "code": "profile-vscode",
-    "explorer":"profile-explorer"
+    "cyberpunk2077": "gaming",
+    "devenv":        "work",
+    "vlc":           "media",
+    "chrome":        "browsing"
   }
 }
 ```
 
+| Champ | Description |
+|---|---|
+| `baseFolder` | Dossier racine contenant tes profils sources |
+| `destination` | Chemin de données L-Connect 3 — **`C:\ProgramData\Lian-Li\L-Connect 3`** en v2.1.20+ |
+| `serviceName` | Nom du service Windows L-Connect — **`LConnectService`** |
+| `default` | Profil appliqué si l'application active n'est pas dans le mapping |
+| `profiles` | Dictionnaire `nom_processus (sans .exe, minuscules) → nom_profil` |
+
+> [!IMPORTANT]
+> Le champ `destination` a changé en v2.1.20. L'ancien chemin `%APPDATA%\LianLi\LConnect3\` n'est plus valide. Utilise impérativement `C:\ProgramData\Lian-Li\L-Connect 3`.
+
+### Préparer les profils sources
+
+Un profil est un dossier sous `baseFolder` contenant les sous-dossiers `device\` et `profile\` tels que L-Connect 3 les structure en interne. Pour capturer l'état courant :
+
+```powershell
+$profileName = "gaming"  # nom de ton choix
+$src = "C:\ProgramData\Lian-Li\L-Connect 3"
+$dst = "C:\LianLiProfiles\$profileName"
+
+Copy-Item "$src\device"  "$dst\device"  -Recurse -Force
+Copy-Item "$src\profile" "$dst\profile" -Recurse -Force
+Write-Host "Profil '$profileName' sauvegardé."
+```
+
+Répète pour chaque profil après avoir configuré l'éclairage souhaité dans L-Connect 3.
+
+Structure attendue dans `baseFolder` :
+
+```
+C:\LianLiProfiles\
+├── gaming\
+│   ├── device\
+│   └── profile\
+├── work\
+│   ├── device\
+│   └── profile\
+└── default\
+    ├── device\
+    └── profile\
+```
+
+### Résolution du fichier de config
+
+L'agent recherche `appProfiles.json` dans cet ordre :
+
+1. Argument CLI : `--config "D:\Configs\appProfiles.json"`
+2. Variable d'environnement : `LIANLI_CONFIG=D:\Configs\appProfiles.json`
+3. `%LOCALAPPDATA%\LianLiProfileWatcher\Config\appProfiles.json`
+4. `Config\appProfiles.json` (dossier de l'exécutable — fallback)
+
+---
+
 ## 🗺️ Fonctionnement
 
-### 🗺️ Résolution du profil à appliquer
+### Détection de la fenêtre active
 
-- À chaque détection d’une nouvelle fenêtre :
-  1. On extrait le nom du processus (sans extension, en minuscules).
-  2. On cherche ce nom dans le dictionnaire **`profiles`** :
-      - Si trouvé → appliquer le profil associé.
-      - Sinon → appliquer le profil **`default`**.
+`Worker.cs` installe `SetWinEventHook(EVENT_SYSTEM_FOREGROUND, WINEVENT_OUTOFCONTEXT)` sur un thread STA dédié avec boucle `GetMessage` / `DispatchMessage`. Le callback `WinEventProc` se déclenche en moins de 50 ms à chaque changement de focus.
 
-✅ **But** : lier chaque application à un **profil visuel personnalisé** (ou mode générique).
+### Anti-flood
 
-### 📁 Application du profil
+La variable `_lastProcessName` empêche toute réapplication superflue : si le processus actif n'a pas changé depuis le dernier événement, `ProfileApplier.Apply()` n'est pas appelé.
 
-- **Principe** :
-  - Un **profil** est un dossier sous **`baseFolder`** : **`baseFolder\<profil>`**.
-  - Ce dossier contient les fichiers de configuration spécifiques à **L-Connect 3**.
-- **Pour appliquer** :
-    1. Supprimer les anciens fichiers dans destination.
-    2. Copier récursivement **`baseFolder\<profil>\`** vers **`destination\`**.
-    3. Relancer un service dédié à L-Connect.
+### Filtrage des fenêtres parasites
 
-✅ **But** : rendre actif le style lumineux défini par l’utilisateur.
+Les fenêtres sans titre, les processus système (`dwm`, `winlogon`, etc.) et les handles invalides sont ignorés avant toute résolution de profil.
 
-### 🔁 Détection et debounce
+### Application d'un profil
 
-- **Comportement attendu** :
-  - Ne pas réappliquer un profil si l’utilisateur revient sur la même fenêtre.
-  - Ignorer les fenêtres système ou invisibles.
-- **Implémentation** :
-  - Le hook WinEvent déclenche uniquement sur focus.
-  - On conserve **`_lastProfile`** et n’appelle **`Apply`** que si **`profile != _lastProfile`**.
+Quand un nouveau processus est détecté :
 
-✅ **But** : éviter les traitements inutiles et optimiser les performances.
+1. Recherche du nom du processus (sans `.exe`, en minuscules) dans le dictionnaire `profiles`
+2. Si absent → utilisation du profil `default`
+3. Suppression des dossiers `device\` et `profile\` dans `destination`
+4. Copie récursive depuis `baseFolder\<profil>\device` et `baseFolder\<profil>\profile`
+5. Redémarrage du service `LConnectService` pour que L-Connect 3 recharge sa configuration
 
-## 🚀 Exécution & debug
+---
 
-### En mode console
+## 🚀 Exécution & logs
 
-Pour développer ou debugger, lancez :
+### Mode console (debug)
 
-```bash
-cd publish
+```powershell
+cd .\publish\
 .\LianLiProfileWatcher.exe
 ```
 
-La console affiche :
+Sortie attendue :
 
-```markdown
-[Démarrage de l’agent …]
-Config chargée : BaseFolder=…, Default=…, Profiles=[chrome,notepad,code]
-Hook WinEvent installé.
-Fenêtre active détectée : chrome
-→ Application du profil « profile-chrome »
-...
+```
+[INF] Config chargée : BaseFolder=C:\LianLiProfiles, Default=default, Profiles=[gaming,work,media]
+[INF] Hook WinEvent installé.
+[INF] Fenêtre active détectée : cyberpunk2077
+[INF] → Application du profil « gaming »
+[INF] Service LConnectService redémarré avec succès.
 ```
 
-### Logs
+### Fichiers de log
 
-Un fichier agent.log est créé dans :
-
-```lua
-%LOCALAPPDATA%\LianLiProfileWatcher\Logs\agent.log
+```
+%LOCALAPPDATA%\LianLiProfileWatcher\Logs\agent-YYYYMMDD.log
 ```
 
-Toutes les **entrées console** et **info/erreur** y sont consignées, avec rotation quotidienne et rétention 7 jours.
+- Rotation quotidienne, rétention 7 jours
+- Niveaux : `DEBUG` / `INFO` / `WARN` / `ERROR`
+- Format JSON structuré (Serilog)
+
+Surveiller en temps réel :
+
+```powershell
+Get-Content "$env:LOCALAPPDATA\LianLiProfileWatcher\Logs\agent*.log" -Wait -Tail 20
+```
+
+---
+
+## 🔄 Lancement automatique au démarrage
+
+### Option 1 — Tâche planifiée AtLogon (recommandé si droits élevés requis)
+
+Droits élevés nécessaires pour redémarrer `LConnectService` :
+
+```powershell
+$exe = "$env:LOCALAPPDATA\LianLiProfileWatcher\LianLiProfileWatcher.exe"
+schtasks /Create /TN "LianLiProfileWatcher" /TR $exe /SC ONLOGON /RL HIGHEST /F
+```
+
+### Option 2 — Clé de registre Run (sans droits élevés)
+
+```powershell
+$exe = "$env:LOCALAPPDATA\LianLiProfileWatcher\LianLiProfileWatcher.exe"
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" `
+  -Name "LianLiProfileWatcher" -Value $exe
+```
+
+> [!NOTE]
+> Si la tâche planifiée est utilisée, supprime la clé de registre Run pour éviter un double démarrage.
+
+### Scripts d'installation / désinstallation
+
+```powershell
+# Installation
+.\Scripts\install-service.ps1 `
+  -InstallDir "C:\Users\<USER>\AppData\Local\LianLiProfileWatcher" `
+  -ConfigPath  "D:\Configs\appProfiles.json"
+
+# Désinstallation
+.\Scripts\uninstall-service.ps1
+```
+
+---
 
 ## ✅ Tests unitaires
 
-Les tests sont dans tests/LianLiProfileWatcher.Tests. Pour exécuter :
-
-```bash
-dotnet test --configuration Release
+```powershell
+dotnet test -c Release
 ```
 
-- ConfigurationServiceTests : chargement JSON & erreurs.
+Couverture :
 
-- ProfileApplierTests : copie/suppression de dossiers.
+- `ConfigurationServiceTests` — chargement JSON, valeurs manquantes, config absente
+- `ProfileApplierTests` — copie/suppression de dossiers, service introuvable, profil inexistant
+
+---
 
 ## 🛡️ Intégration Continue (CI)
 
-Un workflow GitHub Actions **`(.github/workflows/ci.yml)`** déclenche sur push/PR vers main :
+Le workflow `.github/workflows/ci.yml` se déclenche sur chaque push et PR vers `main` :
 
 1. `dotnet restore`
-2. `dotnet build --configuration Release`
-3. `dotnet test --configuration Release`
-4. (*optionnel*) collecte de couverture via Coverlet
+2. `dotnet build -c Release`
+3. `dotnet test -c Release`
 
-## 📦 Packaging & déploiement
-
-### Script PowerShell d’installation
-
-\+ de détails dans le fichier [DEPLOYMENT.md > Copier les fichiers + Installation du service](DEPLOYMENT.md#51---copier-les-fichiers)
-
-Le script se trouve dans **`Scripts/install-service.ps1`**.
-
-Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
-
-```powershell
-.\install-service.ps1 `
--InstallDir "C:\<MON_PATH>\LianLiProfileWatcher" `
--ServiceName "LianLiProfileWatcher-Agent" `
--ConfigPath  "D:\<PATH_CONFIG>\appProfiles.json"
-```
-
-### Script PowerShell de désinstallation
-
-\+ de détails dans le fichier [DEPLOYMENT.md > Désinstallation du service](DEPLOYMENT.md#72---désinstallation-du-service-windows)
-
-Le script **`Scripts/uninstall-service.ps1`** :
-
-Exécute ce script ainsi (**depuis le dossier Scripts\\**) :
-
-```powershell
-param($InstallDir="C:\Program Files\LianLiProfileWatcher",$ServiceName="LianLiProfileWatcher")
-sc.exe stop $ServiceName
-sc.exe delete $ServiceName
-if (Test-Path $InstallDir) { Remove-Item $InstallDir -Recurse -Force }
-Write-Host "Service désinstallé et fichiers supprimés."
-```
-
-## 🔄 Lancement automatique au logon
-
-### ⏲️ Tâche planifiée “At logon” (recommandé)
-
-\+ de détails dans le fichier [DEPLOYMENT.md > Créer une tâche planifiée](DEPLOYMENT.md#52---configurer-une-tâche-planifiée-recommandé)
-
-### 🗝️ Clé de registre Run (alternative)
-
-\+ de détails dans le fichier [DEPLOYMENT.md > Créer une clé de registre](DEPLOYMENT.md#53---clé-de-registre-run-alternative)
+---
 
 ## ❓ Dépannage
 
-- **Aucun log** dans **`agent.log`**
-  - Vérifiez le chemin **`%LOCALAPPDATA%`**, les droits NTFS.
-  - Lancez manuellement en console pour voir les erreurs immédiates.
+**Aucun log dans `agent.log`**
+→ Lance l'exécutable en console pour voir les erreurs immédiates. Vérifie les droits NTFS sur `%LOCALAPPDATA%`.
 
-- **Le hook ne détecte pas les fenêtres**
-  - Assurez-vous d’être sur une session interactive (pas un service).
-  - Vérifiez que **`WinEventProc`** logge bien les processus (test en console).
-- **Service Windows vs agent**
-  - Les services Windows ne peuvent pas hooker des sessions utilisateurs.
-  - Utilisez **exclusivement l’agent** (Tâche planifiée) en session utilisateur.
+**Le hook ne détecte pas les changements de fenêtre**
+→ L'agent doit s'exécuter en session utilisateur interactive, pas en service Windows pur. Utilise la tâche planifiée AtLogon.
 
-Pour plus de détails, voir la documentation complète :
+**`Service 'LConnectService' introuvable`**
+→ Vérifie que L-Connect 3 est installé et que le service existe : `Get-Service LConnectService`. Vérifie le champ `serviceName` dans `appProfiles.json`.
 
-- [DEPLOYMENT](DEPLOYMENT.md)
-- [CHANGELOG](CHANGELOG.md)  
-- [CONTRIBUTING](CONTRIBUTING.md)  
-- [CODE OF CONDUCT](CODE_OF_CONDUCT.md)  
-- [Guide de déploiement détaillé](docs/DEPLOYMENT.md)  
-- [Schéma d’architecture (PlantUML)](docs/architecture.puml)
+**Le profil est appliqué mais l'éclairage ne change pas**
+→ Vérifie que `destination` pointe bien vers `C:\ProgramData\Lian-Li\L-Connect 3` et que les sous-dossiers `device\` et `profile\` existent dans ton profil source.
+
+**Double application du même profil au démarrage**
+→ Vérifie qu'il n'y a pas à la fois une clé de registre Run ET une tâche planifiée actives.
+
+---
+
+## 📚 Documentation complémentaire
+
+- [DEPLOYMENT.md](DEPLOYMENT.md) — déploiement détaillé pas à pas
+- [CHANGELOG.md](CHANGELOG.md) — historique des versions
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribuer au projet
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [docs/architecture.puml](docs/architecture.puml) — schéma d'architecture PlantUML
