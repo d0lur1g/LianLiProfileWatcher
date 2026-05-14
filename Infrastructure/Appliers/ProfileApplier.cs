@@ -55,7 +55,7 @@ namespace LianLiProfileWatcher.Infrastructure.Appliers
 
                 // 3. Redémarrage du service LConnectService
                 _logger.LogDebug("  Redémarrage du service LConnectService");
-                RestartService("LConnectService");
+                RestartServicePair(config.ServiceName, config.WatcherServiceName);
 
                 _logger.LogInformation("Profil '{Profile}' appliqué avec succès.", profileName);
             }
@@ -123,22 +123,74 @@ namespace LianLiProfileWatcher.Infrastructure.Appliers
             }
         }
 
-        private void RestartService(string serviceName)
+        private void RestartServicePair(string serviceName, string watcherServiceName)
         {
+            ServiceController? watcher = null;
+            ServiceController? main = null;
+
             try
             {
-                using var sc = new ServiceController(serviceName);
-                _logger.LogDebug("Arrêt du service {Service}", serviceName);
-                sc.Stop();
-                sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                // 1. Arrêter le watcher EN PREMIER pour éviter qu'il interfère
+                if (!string.IsNullOrEmpty(watcherServiceName))
+                {
+                    try
+                    {
+                        watcher = new ServiceController(watcherServiceName);
+                        var _ = watcher.Status; // lève exception si inexistant — ignoré volontairement
+                        if (watcher.Status == ServiceControllerStatus.Running)
+                        {
+                            _logger.LogDebug("Arrêt du watcher {Watcher}", watcherServiceName);
+                            watcher.Stop();
+                            watcher.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15));
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        _logger.LogDebug("Watcher service '{Watcher}' absent, ignoré", watcherServiceName);
+                        watcher?.Dispose();
+                        watcher = null;
+                    }
+                }
 
+                // 2. Arrêter le service principal
+                main = new ServiceController(serviceName);
+                if (main.CanStop)
+                {
+                    _logger.LogDebug("Arrêt du service {Service}", serviceName);
+                    main.Stop();
+                    main.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                }
+
+                // 3. Redémarrer le service principal
                 _logger.LogDebug("Démarrage du service {Service}", serviceName);
-                sc.Start();
-                sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+                main.Start();
+                main.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+                _logger.LogInformation("Service {Service} redémarré avec succès", serviceName);
+
+                // 4. Redémarrer le watcher EN DERNIER
+                if (watcher != null)
+                {
+                    _logger.LogDebug("Redémarrage du watcher {Watcher}", watcherServiceName);
+                    watcher.Start();
+                    watcher.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(15));
+                    _logger.LogInformation("Watcher {Watcher} redémarré", watcherServiceName);
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex,
+                    "Service '{Service}' introuvable. Vérifiez 'serviceName' dans appProfiles.json.",
+                    serviceName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Impossible de redémarrer le service {Service}", serviceName);
+                _logger.LogError(ex, "Erreur lors du redémarrage des services {Service}/{Watcher}",
+                    serviceName, watcherServiceName);
+            }
+            finally
+            {
+                watcher?.Dispose();
+                main?.Dispose();
             }
         }
 

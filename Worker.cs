@@ -17,6 +17,7 @@ namespace LianLiProfileWatcher
         private readonly IConfigurationService _configService;
         private readonly IProfileApplier _profileApplier;
         private WinEventDelegate _winEventDelegate = null!;
+        private string _lastProcessName = string.Empty;
 
         private const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
         private const uint WINEVENT_OUTOFCONTEXT = 0x0000;
@@ -91,13 +92,13 @@ namespace LianLiProfileWatcher
 
         [SupportedOSPlatform("windows")]
         private void WinEventProc(
-            IntPtr hWinEventHook,
-            uint eventType,
-            IntPtr hwnd,
-            int idObject,
-            int idChild,
-            uint dwEventThread,
-            uint dwmsEventTime)
+         IntPtr hWinEventHook,
+         uint eventType,
+         IntPtr hwnd,
+         int idObject,
+         int idChild,
+         uint dwEventThread,
+         uint dwmsEventTime)
         {
             if (hwnd == IntPtr.Zero) return;
 
@@ -112,12 +113,18 @@ namespace LianLiProfileWatcher
             }
             catch
             {
-                _logger.LogWarning(
-                    "Processus introuvable pour HWND={Handle}", hwnd);
+                _logger.LogWarning("Processus introuvable pour HWND={Handle}", hwnd);
                 return;
             }
 
             _logger.LogInformation("Fenêtre active détectée : {Process}", processName);
+
+            if (processName == _lastProcessName)
+            {
+                _logger.LogDebug("Anti-flood : même processus '{Process}', profil non réappliqué", processName);
+                return;
+            }
+            _lastProcessName = processName;
 
             var profile = _configService.Config.Profiles
                              .TryGetValue(processName, out var p) ? p

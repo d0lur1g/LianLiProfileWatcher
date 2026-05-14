@@ -3,6 +3,8 @@
   "baseFolder": "<ADD_YOUR_PATH_HERE>\\profiles",
   "destination": "<ADD_YOUR_PATH_HERE>\\Lian-Li\\L-Connect 3\\appdata",
   "scriptPath": "<ADD_YOUR_PATH_HERE>\\lian_li_import.ps1",
+  "serviceName": "LConnectService",
+  "watcherServiceName": "LConnectServiceWatcher",
   "default": "profile-default",
   "profiles": {
     "cyberpunk2077": "profile-cyberpunk",
