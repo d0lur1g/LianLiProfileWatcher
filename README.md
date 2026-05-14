@@ -40,7 +40,7 @@ Agent Windows léger qui détecte l'application au premier plan via un **hook Wi
 ### Composants
 
 | Fichier | Rôle |
-|---|---|
+| --- | --- |
 | `Program.cs` | Configure le Generic Host .NET, Serilog, l'injection de dépendances et enregistre le `Worker` |
 | `Worker.cs` | Service principal : installe le hook WinEvent sur thread STA dédié, détecte le changement de fenêtre active, appelle `ProfileApplier` |
 | `Services/ConfigurationService.cs` | Charge et surveille le JSON de config (CLI → ENV → LocalAppData → template) ; expose le POCO `AppProfileConfig` |
@@ -51,7 +51,7 @@ Agent Windows léger qui détecte l'application au premier plan via un **hook Wi
 
 ### Structure du projet
 
-```
+```text
 LianLiProfileWatcher/
 ├── .github/workflows/ci.yml
 ├── Application/Interfaces/
@@ -136,7 +136,7 @@ Copie `Config/appProfiles.example.json` vers un emplacement personnel (ne jamais
 ```
 
 | Champ | Description |
-|---|---|
+| --- | --- |
 | `baseFolder` | Dossier racine contenant tes profils sources |
 | `destination` | Chemin de données L-Connect 3 — **`C:\ProgramData\Lian-Li\L-Connect 3`** en v2.1.20+ |
 | `serviceName` | Nom du service Windows L-Connect — **`LConnectService`** |
@@ -164,7 +164,7 @@ Répète pour chaque profil après avoir configuré l'éclairage souhaité dans 
 
 Structure attendue dans `baseFolder` :
 
-```
+```text
 C:\LianLiProfiles\
 ├── gaming\
 │   ├── device\
@@ -225,7 +225,7 @@ cd .\publish\
 
 Sortie attendue :
 
-```
+```text
 [INF] Config chargée : BaseFolder=C:\LianLiProfiles, Default=default, Profiles=[gaming,work,media]
 [INF] Hook WinEvent installé.
 [INF] Fenêtre active détectée : cyberpunk2077
@@ -235,7 +235,7 @@ Sortie attendue :
 
 ### Fichiers de log
 
-```
+```text
 %LOCALAPPDATA%\LianLiProfileWatcher\Logs\agent-YYYYMMDD.log
 ```
 
