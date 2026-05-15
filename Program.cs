@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using LianLiProfileWatcher.Application.Interfaces;
@@ -69,8 +70,10 @@ namespace LianLiProfileWatcher
                     // Binding POCO + injection
                     services.AddSingleton<IProfileApplier, ProfileApplier>();
                     services.AddSingleton<IForegroundProcessService, ForegroundProcessService>();
-                    services.AddSingleton<IConfigurationService>(_ =>
-                        new ConfigurationService(configPath));
+                    services.AddSingleton<IConfigurationService>(sp =>
+                        new ConfigurationService(
+                            configPath,
+                            sp.GetRequiredService<ILogger<ConfigurationService>>()));
                     services.AddHostedService<Worker>();
                 });
 

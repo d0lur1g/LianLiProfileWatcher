@@ -18,6 +18,14 @@ namespace LianLiProfileWatcher.Infrastructure.Appliers
         {
             _configService = configService;
             _logger = logger;
+
+            // Quand la config est rechargée, invalider le cache du dernier profil
+            // pour forcer une réapplication au prochain changement de focus
+            configService.ConfigReloaded += _ =>
+            {
+                _logger.LogInformation("Config rechargée — invalidation du cache de profil.");
+                _lastAppliedProfile = string.Empty;
+            };
         }
 
         public async Task ApplyAsync(string profileName, CancellationToken cancellationToken = default)
