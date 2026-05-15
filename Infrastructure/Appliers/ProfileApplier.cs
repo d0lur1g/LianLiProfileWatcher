@@ -136,7 +136,7 @@ namespace LianLiProfileWatcher.Infrastructure.Appliers
                     try
                     {
                         watcher = new ServiceController(watcherServiceName);
-                        var _ = watcher.Status; // lève exception si inexistant — ignoré volontairement
+                        var _ = watcher.Status; // lève exception si inexistant
                         if (watcher.Status == ServiceControllerStatus.Running)
                         {
                             _logger.LogDebug("Arrêt du watcher {Watcher}", watcherServiceName);
@@ -167,7 +167,10 @@ namespace LianLiProfileWatcher.Infrastructure.Appliers
                 main.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
                 _logger.LogInformation("Service {Service} redémarré avec succès", serviceName);
 
-                // 4. Redémarrer le watcher EN DERNIER
+                // Laisser L-Connect charger sa configuration avant de rendre la main au watcher
+                Thread.Sleep(TimeSpan.FromSeconds(3));
+
+                // 4. Redémarrer le watcher EN DERNIER — il retrouve un service stable
                 if (watcher != null)
                 {
                     _logger.LogDebug("Redémarrage du watcher {Watcher}", watcherServiceName);
@@ -175,7 +178,7 @@ namespace LianLiProfileWatcher.Infrastructure.Appliers
                     watcher.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(15));
                     _logger.LogInformation("Watcher {Watcher} redémarré", watcherServiceName);
                 }
-            }
+            }                                                          // ← ce } fermait le try — il manquait dans ton code
             catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex,
