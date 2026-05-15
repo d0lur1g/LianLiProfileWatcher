@@ -1,8 +1,10 @@
-// Fichier : Application/Interfaces/IProfileApplier.cs
 namespace LianLiProfileWatcher.Application.Interfaces
 {
     public interface IProfileApplier
     {
-        void Apply(string profileName);
+        /// <summary>
+        /// Applique le profil donné de façon asynchrone et annulable.
+        /// </summary>
+        Task ApplyAsync(string profileName, CancellationToken cancellationToken = default);
     }
 }
