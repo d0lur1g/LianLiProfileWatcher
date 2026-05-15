@@ -116,3 +116,4 @@ appsettings*.json
 .git/
 
 ###########################
+*.lscache
