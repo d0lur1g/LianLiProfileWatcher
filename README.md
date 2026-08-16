@@ -1,5 +1,26 @@
 # Lian Li Profile Watcher
 
+> [!WARNING]
+> ## 🚧 Projet non maintenu — remplacé par **[lconnect-auto-profiler](https://github.com/d0lur1g/lconnect-auto-profiler)**
+>
+> Ce dépôt reste en ligne à titre de référence, mais le développement s'est déplacé vers un
+> successeur plus abouti et plus fonctionnel :
+>
+> ### 👉 https://github.com/d0lur1g/lconnect-auto-profiler
+>
+> **Ce qui change :**
+>
+> | | Lian Li Profile Watcher (ici) | lconnect-auto-profiler |
+> | --- | --- | --- |
+> | Méthode | Copie les dossiers `device\` / `profile\` sur disque, puis **redémarre `LConnectService`** | Pilote `LConnectService` via son **API HTTP locale** (`http://127.0.0.1:11021/`) — aucune copie de fichiers, aucun redémarrage de service |
+> | Portée | Éclairage uniquement | Éclairage, **courbes de ventilation** et **contenu de l'écran GA II LCD** |
+> | Profils | Dossiers capturés à la main depuis `ProgramData` | Exports natifs L-Connect (*Profile → Export*) importés par script, **rechargés à chaud** |
+> | Installation | Tâche planifiée `/RL HIGHEST` (droits élevés requis pour redémarrer le service) | Tâche planifiée à l'ouverture de session, **sans droits administrateur** |
+> | Protocole | — | Documenté et couvert par des tests basés sur des captures Wireshark du logiciel officiel |
+>
+> Les utilisateurs de ce dépôt sont invités à migrer. Aucune correction ni nouvelle
+> fonctionnalité n'est prévue ici.
+
 [![CI](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/d0lur1g/LianLiProfileWatcher/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/d0lur1g/LianLiProfileWatcher)](https://github.com/d0lur1g/LianLiProfileWatcher/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
